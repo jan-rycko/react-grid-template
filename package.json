@@ -1,0 +1,40 @@
+{
+  "name": "react-grid",
+  "version": "1.0.0",
+  "description": "Grid makes styling components more human-like, simplyfing creation of dynamic-size and position UI elements.",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jan-rycko/react-grid.git"
+  },
+  "keywords": [
+    "react",
+    "grid",
+    "flex",
+    "dynamic"
+  ],
+  "author": {
+    "name": "Jan Ryćko"
+  },
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/jan-rycko/react-grid/issues"
+  },
+  "homepage": "https://github.com/jan-rycko/react-grid#readme",
+  "dependencies": {
+    "code": "file:./code",
+    "components": "file:./components",
+    "classnames": "^2.2.6",
+    "lodash-es": "^4.17.11",
+    "react": "^16.7.0",
+    "shallowequal": "^1.1.0"
+  },
+  "devDependencies": {
+    "@types/lodash-es": "^4.17.1",
+    "@types/react": "^16.7.20",
+    "typescript": "^3.2.4"
+  }
+}
