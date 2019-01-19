@@ -1,6 +1,6 @@
 {
-  "name": "react-grid",
-  "version": "1.0.0",
+  "name": "react-grid-template",
+  "version": "1.0.1",
   "description": "Grid makes styling components more human-like, simplyfing creation of dynamic-size and position UI elements.",
   "main": "index.ts",
   "types" : "dist/index.d.ts",
@@ -14,8 +14,7 @@
   "keywords": [
     "react",
     "grid",
-    "flex",
-    "dynamic"
+    "flex"
   ],
   "author": {
     "name": "Jan Ryćko"
