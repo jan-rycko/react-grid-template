@@ -47,7 +47,6 @@ export interface IGridSize {
     [GridUnit.Vw]?: number;
     [GridUnit.Em]?: number;
     [GridUnit.Percent]?: number;
-    isEmptySpace?: boolean;
 }
 export declare type IGridTemplate = (string | IGridStyle)[];
 export interface IGridMargin {

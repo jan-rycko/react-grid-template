@@ -287,12 +287,6 @@ const getGridTemplateSizes = (
 
     const styleMap = convertEmptySpacesToMargin(styleMapWithEmptySpaces, direction);
 
-    console.log({
-        directionStats,
-        styleMapWithEmptySpaces,
-        styleMap,
-    });
-
     return styleMap.map(style => {
         const { paddingBefore, paddingAfter, marginBefore, marginAfter } = getGutterProperties(style, direction);
         const [ gutterBefore, gutterAfter ] = gutterProperties[direction];
@@ -459,7 +453,7 @@ const getSizePart = (
     size: IGridStyle,
     {fraction, isPartEnd, isPartStart}: IGridSizeFraction,
     direction = TemplateDirection.Row,
-): IGridSize => {
+): IGridStyle => {
     let gutterToAdd: IGridSize = {};
     const { marginBefore, paddingBefore, marginAfter, paddingAfter } = getGutterProperties(size, direction);
     const directionSizeProperty = sizeProperty[direction];

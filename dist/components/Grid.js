@@ -143,7 +143,7 @@ var Grid = /** @class */ (function (_super) {
         var tagProps = {};
         if (Component !== react_1.Fragment) {
             tagProps = {
-                style: __assign({}, style, gridStyle, (direction === grid_model_1.TemplateDirection.Column ? columnStyle : {})),
+                style: __assign({}, gridStyle, (direction === grid_model_1.TemplateDirection.Column ? columnStyle : {}), style),
                 className: this.getGridElementClass(direction, this.gridClass, className, gutterAs + "-gutter"),
             };
         }

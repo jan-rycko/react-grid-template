@@ -150,7 +150,7 @@ class Grid extends PureComponent<IGridProps, IGridState> {
 
         if (Component !== Fragment) {
             tagProps = {
-                style: { ...style, ...gridStyle, ...(direction === TemplateDirection.Column ? columnStyle : {}) },
+                style: { ...gridStyle, ...(direction === TemplateDirection.Column ? columnStyle : {}), ...style },
                 className: this.getGridElementClass(direction, this.gridClass, className, `${gutterAs}-gutter`),
             };
         }

@@ -56,7 +56,6 @@ export interface IGridSize {
     [GridUnit.Vw]?: number
     [GridUnit.Em]?: number
     [GridUnit.Percent]?: number
-    isEmptySpace?: boolean
 }
 
 export type IGridTemplate = (string | IGridStyle)[]
