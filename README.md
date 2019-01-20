@@ -4,7 +4,7 @@ Grid makes styling components more human-like, simplyfing creation of dynamic-si
 
 ## Installation
 ```sh
-npm install react-grid --save
+npm install react-grid-template --save
 ```
 
 ## Usage
@@ -13,7 +13,7 @@ npm install react-grid --save
 
 ```typescript
 import React from 'react';
-import { Grid, IGridChildProps } from 'react-grid';
+import { Grid, IGridChildProps } from 'react-grid-template';
 
 const ComponentInGrid = ({ style }: IGridChildProps) =>
     <div style={style}>Hallo Gorgeous!</div>
