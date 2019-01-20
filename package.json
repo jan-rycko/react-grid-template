@@ -1,8 +1,8 @@
 {
   "name": "react-grid-template",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Grid makes styling components more human-like, simplyfing creation of dynamic-size and position UI elements.",
-  "main": "index.ts",
+  "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc"
