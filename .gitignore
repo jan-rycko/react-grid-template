@@ -4,8 +4,7 @@
 /node_modules
 /.pnp
 .pnp.js
-/.idea
-/.idea/dictionaries/janry.xml
+.idea
 
 # testing
 /coverage
