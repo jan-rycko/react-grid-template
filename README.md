@@ -1,4 +1,4 @@
-# React Grid
+# react-grid-template
 
 Grid makes styling components more human-like, simplyfing creation of dynamic-size and position UI elements.
 
@@ -11,7 +11,7 @@ npm install react-grid-template --save
 
 ### Simple grid layout with dynamic width column
 
-```typescript
+```JSX
 import React from 'react';
 import { Grid, IGridChildProps } from 'react-grid-template';
 
@@ -41,7 +41,7 @@ You can also set additional modifiers in gridTemplate:
 For some components might want to span across multiple columns of the template:
 
 
-```typescript
+```JSX
 const OtherComponentWithGrid = () => {
     return (
         <Grid gutter="16px" gridTemplate={gridTemplate} spanTemplate={[ 1, 3 ]}>
@@ -59,7 +59,7 @@ Span can have fractional values. Span `[ 1.5, 2.5 ]` will span first column up t
 
 By default gutter will be calculated as padding. You can specify different behaviour by adding gutterAs prop:
 
-```typescript
+```JSX
 const YetAnotherComponentWithGrid = () => {
     return (
         <Grid
@@ -83,7 +83,7 @@ It will be divided evenly to gutter before and after element (whether it's paddi
 
 By default Grid will layout components in a row. You can customize this behaviour by adding a prop:
 
-```typescript
+```JSX
 const WhyNotWriteSomeComponentsJustForTheSakeOfWritingThem = () => {
     return (
         <Grid
@@ -103,7 +103,7 @@ const WhyNotWriteSomeComponentsJustForTheSakeOfWritingThem = () => {
 
 By default component will be rendered as 'div'. You can customize it by adding your tag, style and className prop:
 
-```typescript
+```JSX
 const AComponent = () => {
     return (
         <Grid
