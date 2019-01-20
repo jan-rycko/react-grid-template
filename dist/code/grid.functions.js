@@ -214,11 +214,6 @@ var getGridTemplateSizes = function (gridTemplate, gutter, gutterAs, direction) 
     if (direction === void 0) { direction = grid_model_1.TemplateDirection.Row; }
     var _a = getGridStatsAndSizesWithEmptySpaces(gridTemplate, gutter, gutterAs, direction), directionStats = _a.directionStats, styleMapWithEmptySpaces = _a.styleMapWithEmptySpaces;
     var styleMap = convertEmptySpacesToMargin(styleMapWithEmptySpaces, direction);
-    console.log({
-        directionStats: directionStats,
-        styleMapWithEmptySpaces: styleMapWithEmptySpaces,
-        styleMap: styleMap,
-    });
     return styleMap.map(function (style) {
         var _a, _b, _c;
         var _d = getGutterProperties(style, direction), paddingBefore = _d.paddingBefore, paddingAfter = _d.paddingAfter, marginBefore = _d.marginBefore, marginAfter = _d.marginAfter;

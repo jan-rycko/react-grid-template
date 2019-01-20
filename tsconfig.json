@@ -14,6 +14,11 @@
     ],
     "moduleResolution": "node",
     "preserveConstEnums": true,
-    "noImplicitAny": false
+    "noImplicitAny": false,
+    "baseUrl": ".",
+    "paths": {
+      "components": [ "components" ],
+      "code": [ "code" ]
+    }
   }
 }
