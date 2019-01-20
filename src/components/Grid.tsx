@@ -8,9 +8,9 @@ import {
     IGridTemplateDescriptor,
     TemplateDirection,
     TemplateGutter,
-} from 'code/grid.model';
-import {isChildrenList, isReactComponent} from 'code/grid.react-utils';
-import {getGridStyle} from 'code/grid.functions';
+} from 'src/code/grid.model';
+import {isChildrenList, isReactComponent} from 'src/code/grid.react-utils';
+import {getGridStyle} from 'src/code/grid.functions';
 
 interface IGridProps extends IGridTemplateDescriptor {
     tag?: string | typeof Fragment

@@ -1,7 +1,7 @@
 export {
     Grid,
     IGridChildProps,
-} from 'components';
+} from './components/index';
 export {
     getGridStyle,
     TemplateDirection,
@@ -18,4 +18,4 @@ export {
     IGridMargin,
     IGridElementsRange,
     IGridSizeFraction,
-} from 'code';
+} from './code/index';
