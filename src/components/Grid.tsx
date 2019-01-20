@@ -11,7 +11,7 @@ import {
     isChildrenList,
     isReactComponent,
     getGridStyle,
-} from 'src/code';
+} from '../code';
 
 interface IGridProps extends IGridTemplateDescriptor {
     tag?: string | typeof Fragment
