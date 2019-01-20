@@ -1,4 +1,5 @@
 export { getGridStyle } from './grid.functions';
+export { isChildrenList, isReactComponent } from './grid.react-utils';
 export {
     TemplateDirection,
     TemplateGutter,
@@ -14,4 +15,5 @@ export {
     IGridMargin,
     IGridElementsRange,
     IGridSizeFraction,
+    IGridSizeWithMargin,
 } from './grid.model';

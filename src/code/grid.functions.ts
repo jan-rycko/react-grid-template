@@ -16,7 +16,7 @@ import {
     IGutterStyle,
     TemplateDirection,
     TemplateGutter,
-} from './grid.model';
+} from 'src/code';
 import cloneDeep from 'lodash-es/cloneDeep';
 import isPlainObject from 'lodash-es/isPlainObject';
 import upperFirst from 'lodash-es/upperFirst';
