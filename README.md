@@ -1,4 +1,4 @@
-# React Grid
+# react-grid-template
 
 Grid makes styling components more human-like, simplyfing creation of dynamic-size and position UI elements.
 
