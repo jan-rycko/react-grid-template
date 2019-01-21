@@ -1,2 +1,7 @@
-components/
-code/
+src/
+node_modules/
+.idea/
+.gitignore
+.npmignore
+tsconfig.json
+webpack.prod.json
