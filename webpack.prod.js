@@ -11,11 +11,22 @@ module.exports = {
         index: root('./src/index.ts')
     },
 
+    output: {
+        path: root('./dist'),
+        filename: '[name].js',
+        libraryTarget: 'commonjs2'
+    },
+
     resolve: {
         alias: {
             src: root('./src/')
         },
         extensions: [".js", ".jsx", ".ts", ".tsx"]
+    },
+    target: 'node',
+    node: {
+        __dirname: false,
+        __filename: false,
     },
 
     module: {
@@ -49,30 +60,10 @@ module.exports = {
         contentBase: root('./target/dist'),
 	},
 
-	output: {
-        path: root('./dist'),
-		chunkFilename: '[name].js',
-		filename: '[name].js',
-        libraryTarget: 'commonjs'
-	},
-
-	mode: 'production',
-
 	optimization: {
-		splitChunks: {
-			cacheGroups: {
-				vendors: {
-					priority: -10,
-					test: /[\\/]node_modules[\\/]/
-				}
-			},
-
-			chunks: 'async',
-			minChunks: 1,
-			minSize: 30000,
-			name: true
-		}
+		splitChunks: false
 	},
+
     plugins: [
         new TSDeclerationsPlugin({
             main: './dist/index.d.ts'

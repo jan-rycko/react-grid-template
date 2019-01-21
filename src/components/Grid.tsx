@@ -1,6 +1,7 @@
-import React, {Children, cloneElement, Fragment, CSSProperties, PureComponent, ReactNode} from 'react';
+import * as React from 'react';
+import {CSSProperties, ReactNode, Children, cloneElement, Fragment, PureComponent} from 'react';
 import classnames from 'classnames';
-import shallowEqual from 'shallowequal';
+import * as shallowEqual from 'shallowequal';
 import isEqual from 'lodash-es/isEqual';
 import {
     IGridStyle,
@@ -8,15 +9,19 @@ import {
     IGridTemplateDescriptor,
     TemplateDirection,
     TemplateGutter,
+} from '../code/grid.model';
+import {
+    getGridStyle,
+} from '../code/grid.functions';
+import {
     isChildrenList,
     isReactComponent,
-    getGridStyle,
-} from '../code';
+} from '../code/grid.react-utils';
 
 interface IGridProps extends IGridTemplateDescriptor {
     tag?: string | typeof Fragment
-    style?: CSSProperties,
-    className?: string,
+    style?: CSSProperties
+    className?: string
 }
 
 export interface IGridChildProps {
@@ -164,4 +169,4 @@ class Grid extends PureComponent<IGridProps, IGridState> {
     }
 }
 
-export default Grid;
+export { Grid };
