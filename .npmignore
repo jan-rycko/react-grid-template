@@ -4,4 +4,4 @@ node_modules/
 .gitignore
 .npmignore
 tsconfig.json
-webpack.prod.json
+webpack.prod.js

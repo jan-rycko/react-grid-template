@@ -54,7 +54,9 @@ export const getGridStyle = (
         sizes = calculateSizesWithSpanTemplate(sizes, spanTemplate, direction);
     }
 
-    return getSizesAsCSSProperties(direction, sizes);
+    const styles: CSSProperties[] = getSizesAsCSSProperties(direction, sizes);
+
+    return styles;
 };
 
 const getExpressionValueRegex = (value: string): RegExp => {
@@ -105,13 +107,17 @@ const getValueFromExpressionPart = (expression: string, fraction: number = 1) =>
     return unitsAndValues;
 };
 
-const expressionWordRegExp = /\.?\d+\w*( [-+] \.?\d+\w*)*/g;
+const expressionWordRegExp = new RegExp(
+    `[0-9.]+${gridUnitRegExpPart}*( [-+] [0-9.]+${gridUnitRegExpPart}*)*`,
+    'g'
+);
 
 const getExpressionAsStyle = (value: string | number, direction: TemplateDirection): IGridStyle => {
     if (!value) return {};
     if (typeof value === 'number') {
         return { [sizeProperty[direction]]: { [GridUnit.Px]: value } };
     }
+
 
     const isEmptySpace = value.substr(0, 2) === '. ';
     const expression = isEmptySpace ? value.replace('. ', '') : value;
@@ -348,7 +354,8 @@ const getSizesAsCSSProperties = (
     sizes: IGridStyle[],
 ): CSSProperties[] => sizes.map(({ margin, padding, isEmptySpace, ...size }) => ({
     ...getSizeStyle(size, direction),
-    boxSizing: 'content-box' as BoxSizingProperty,
+    flexShrink: 0,
+    boxSizing: 'border-box' as BoxSizingProperty,
     ...getGutterStyle(TemplateGutter.Margin, margin),
     ...getGutterStyle(TemplateGutter.Padding, padding),
 }));

@@ -1,12 +1,13 @@
 {
   "name": "react-grid-template",
-  "version": "1.0.9",
+  "version": "1.0.11",
   "description": "Grid makes styling components more human-like, simplyfing creation of dynamic-size and position UI elements.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "start": "webpack-dev-server --hot --progress --config ./webpack.prod.js",
-    "build": "webpack --config ./webpack.prod.js"
+    "build": "webpack --config ./webpack.prod.js",
+    "watch": "webpack --watch --config ./webpack.prod.js"
   },
   "repository": {
     "type": "git",

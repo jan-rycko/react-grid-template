@@ -28,6 +28,18 @@ module.exports = {
         __dirname: false,
         __filename: false,
     },
+    externals: {
+        react: 'react',
+        classnames: 'classnames',
+        'lodash-es/isEqual': 'lodash-es/isEqual',
+        'lodash-es/reduce': 'lodash-es/reduce',
+        'lodash-es/forEach': 'lodash-es/forEach',
+        'lodash-es/cloneDeep': 'lodash-es/cloneDeep',
+        'lodash-es/isPlainObject': 'lodash-es/isPlainObject',
+        'lodash-es/upperFirst': 'lodash-es/upperFirst',
+        'lodash-es/words': 'lodash-es/words',
+        shallowequal: 'shallowequal',
+    },
 
     module: {
 		rules: [
@@ -61,7 +73,8 @@ module.exports = {
 	},
 
 	optimization: {
-		splitChunks: false
+        minimize: false,
+        splitChunks: false
 	},
 
     plugins: [
