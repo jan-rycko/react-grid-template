@@ -1,26 +1,15 @@
 import * as React from 'react';
-import {CSSProperties, ReactNode, Children, cloneElement, Fragment, PureComponent} from 'react';
-import classnames from 'classnames';
+import {Children, cloneElement, CSSProperties, Fragment, PureComponent, ReactNode} from 'react';
 import * as shallowEqual from 'shallowequal';
 import isEqual from 'lodash-es/isEqual';
-import {
-    IGridStyle,
-    IGridTemplate,
-    IGridTemplateDescriptor,
-    TemplateDirection,
-    TemplateGutter,
-} from '../code/grid.model';
-import {
-    getGridStyle,
-} from '../code/grid.functions';
-import {
-    isChildrenList,
-    isReactComponent,
-} from '../code/grid.react-utils';
+import {IGridStyle, IGridTemplate, IGridTemplateDescriptor, TemplateDirection} from '../code/grid.model';
+import {getGridStyle} from '../code/grid.functions';
+import {isChildrenList, isReactComponent} from '../code/grid.react-utils';
+import {FunctionComponent} from 'react';
 
-interface IGridProps extends IGridTemplateDescriptor {
+interface IGridProps extends IGridTemplateDescriptor, IGridChildProps {
     tag?: string | typeof Fragment
-    style?: CSSProperties
+    inline?: boolean
     className?: string
 }
 
@@ -35,7 +24,8 @@ interface IGridState {
 }
 
 const GRID_CLASS_NAMESPACE = 'grid';
-const gridStyle: CSSProperties = { display: 'flex' };
+const gridBaseStyle: CSSProperties = { display: 'flex' };
+const inlineGridBaseStyle: CSSProperties = { display: 'inline-flex' };
 const columnStyle: CSSProperties = { flexDirection: 'column' };
 
 class Grid extends PureComponent<IGridProps, IGridState> {
@@ -70,7 +60,7 @@ class Grid extends PureComponent<IGridProps, IGridState> {
         return {};
     };
 
-    getGridFromChildren(children = this.props.children): { sizeTemplate: IGridTemplate, spanTemplate: number[] } {
+    getGridFromChildren(children = this.props.children): { gridTemplateToSet: IGridTemplate, spanTemplateToSet: number[] } {
         let grid: { size?: string | IGridStyle, span?: number }[] = [];
 
         if (isReactComponent<IGridChildProps>(children)) {
@@ -83,33 +73,39 @@ class Grid extends PureComponent<IGridProps, IGridState> {
 
         return grid.reduce((acc, { size, span }) => {
             if (size) {
-                acc.sizeTemplate.push(size);
+                acc.gridTemplateToSet.push(size);
             }
 
             if (span) {
-                acc.spanTemplate.push(span);
+                acc.spanTemplateToSet.push(span);
             }
 
             return acc;
-        }, { sizeTemplate: [], spanTemplate: [] });
+        }, { gridTemplateToSet: [], spanTemplateToSet: [] });
     }
 
-    computeGrid = ({ sizeTemplate, spanTemplate: spanTemplateFromChildren }: { sizeTemplate: IGridTemplate, spanTemplate: number[] }) => {
-        const {direction, gridTemplate, spanTemplate, gutter, gutterAs } = this.props;
+    computeGrid = ({ gridTemplateToSet, spanTemplateToSet }: { gridTemplateToSet: IGridTemplate, spanTemplateToSet: number[] }) => {
+        const {direction, gridTemplate, spanTemplate, gutter, gutterAs, children } = this.props;
+
+        let gridLength = 0;
+
+        // Children.forEach(children, child => {
+        //     if (isReactComponent<IGridChildProps>(child)) gridLength += 1;
+        // });
 
         let gridToSet: IGridTemplate = gridTemplate;
         let spanToSet: number[] = spanTemplate;
 
-        if (sizeTemplate.length) {
-            gridToSet = sizeTemplate;
+        if (gridTemplateToSet.length) {
+            gridToSet = gridTemplateToSet;
         }
 
-        if (spanTemplateFromChildren.length) {
-            spanToSet = spanTemplateFromChildren;
+        if (spanTemplateToSet.length) {
+            spanToSet = spanTemplateToSet;
         }
 
         this.setState({
-            styles: getGridStyle({ direction, gridTemplate: gridToSet, spanTemplate: spanToSet, gutter, gutterAs }),
+            styles: getGridStyle(gridLength, { direction, gridTemplate: gridToSet, spanTemplate: spanToSet, gutter, gutterAs }),
         })
     };
 
@@ -117,7 +113,7 @@ class Grid extends PureComponent<IGridProps, IGridState> {
         let diff = 0;
 
         return Children.map(children, (child, i) => {
-            if (!isReactComponent(child)) {
+            if (!isReactComponent<IGridChildProps>(child)) {
                 diff += 1;
                 return child;
             }
@@ -125,48 +121,58 @@ class Grid extends PureComponent<IGridProps, IGridState> {
 
             const props: IGridChildProps = {};
 
-            if (styles) {
-                if (styles[elementIndex]) {
-                    props.style = styles[elementIndex];
-                }
+            if (styles && styles[elementIndex]) {
+                props.style = {
+                    ...styles[elementIndex],
+                    ...(child.props.style || {})
+                };
             }
 
             return cloneElement(child, props);
         });
     };
 
-    get gridClass() { return GRID_CLASS_NAMESPACE }
+    get gridClass() {
+        const { direction, className, gutterAs } = this.props;
 
-    getGridElementClass = (direction: TemplateDirection, ...classNames: string[]) => {
-        return classnames(`${this.gridClass}__${direction}`, ...classNames);
+        return [`${GRID_CLASS_NAMESPACE}__${direction} ${GRID_CLASS_NAMESPACE} ${gutterAs}-gutter${className ? ` ${className}` : ''}`].join(' ');
+    };
+
+    get gridStyle() {
+        const { direction, style, inline } = this.props;
+
+        return {
+            ...(inline ? inlineGridBaseStyle : gridBaseStyle),
+            ...(direction === TemplateDirection.Column ? columnStyle : {}),
+            ...style,
+        };
     };
 
     render() {
         const {styles} = this.state;
         const {
             children,
-            style = {},
-            className,
-            tag: Component = 'div',
-            direction = TemplateDirection.Row,
-            gutterAs = TemplateGutter.Padding,
+            tag: Element = 'div',
         } = this.props;
 
         let tagProps = {};
 
-        if (Component !== Fragment) {
+        if (Element !== Fragment) {
             tagProps = {
-                style: { ...gridStyle, ...(direction === TemplateDirection.Column ? columnStyle : {}), ...style },
-                className: this.getGridElementClass(direction, this.gridClass, className, `${gutterAs}-gutter`),
+                style: this.gridStyle,
+                className: this.gridClass,
             };
         }
 
         return (
-            <Component {...tagProps}>
+            <Element {...tagProps}>
                 {this.addStyleToProps(children, styles)}
-            </Component>
+            </Element>
         );
     }
 }
 
-export { Grid };
+const GridColumn: FunctionComponent<Exclude<IGridProps, 'direction'>> = (gridProps) => <Grid direction={TemplateDirection.Column} {...gridProps} />;
+const GridRow: FunctionComponent<Exclude<IGridProps, 'direction'>> = (gridProps) => <Grid direction={TemplateDirection.Row} {...gridProps} />;
+
+export { Grid, GridColumn, GridRow };

@@ -31,11 +31,12 @@ const isFractionUnit = (unit: GridUnit): unit is GridUnit.Fr => {
     return unit === GridUnit.Fr;
 };
 
-const isGridSize = (value: any): value is IGridSizeWithMargin => {
-    return isPlainObject(value);
+export const repeatSize = (size: string, length: number): string[] => {
+    return new Array(length).fill(size);
 };
 
 export const getGridStyle = (
+    gridLength: number,
     {
         gridTemplate,
         spanTemplate,
@@ -118,15 +119,13 @@ const getExpressionAsStyle = (value: string | number, direction: TemplateDirecti
         return { [sizeProperty[direction]]: { [GridUnit.Px]: value } };
     }
 
-
     const isEmptySpace = value.substr(0, 2) === '. ';
     const expression = isEmptySpace ? value.replace('. ', '') : value;
-    const [ width, height, depth ] = words(expression, expressionWordRegExp);
+    const [ firstExpr, secondExpr ] = words(expression, expressionWordRegExp);
 
     return {
-        width: width ? getValueFromExpressionPart(width) : {},
-        height: height ? getValueFromExpressionPart(height) : {},
-        depth: depth ? getValueFromExpressionPart(depth) : {},
+        [sizeProperty[direction]]: firstExpr ? getValueFromExpressionPart(firstExpr) : {},
+        [sizeProperty[getSecondDirection(direction)]]: secondExpr ? getValueFromExpressionPart(secondExpr) : {},
         isEmptySpace,
     };
 };

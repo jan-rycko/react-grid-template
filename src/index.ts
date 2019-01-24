@@ -1,12 +1,13 @@
 import {
     Grid,
+    GridColumn,
+    GridRow,
     IGridChildProps,
 } from './components/Grid';
 import {
     TemplateDirection,
     TemplateGutter,
     GridUnit,
-    GritConstantUnit,
     gridUnits,
     gridUnitRegExpPart,
     IGridTemplateDescriptor,
@@ -14,31 +15,28 @@ import {
     IGridStyle,
     IGridSize,
     IGridTemplate,
-    IGridMargin,
-    IGridElementsRange,
-    IGridSizeFraction,
 } from './code/grid.model';
 import {
     getGridStyle,
+    repeatSize,
 } from './code/grid.functions';
 
 export default Grid;
 export {
     Grid,
+    GridRow,
+    GridColumn,
     getGridStyle,
+    repeatSize,
     IGridChildProps,
     TemplateDirection,
     TemplateGutter,
     GridUnit,
-    GritConstantUnit,
     gridUnits,
     gridUnitRegExpPart,
     IGridTemplateDescriptor,
+    IGridTemplate,
     IGutterStyle,
     IGridStyle,
     IGridSize,
-    IGridTemplate,
-    IGridMargin,
-    IGridElementsRange,
-    IGridSizeFraction,
 }

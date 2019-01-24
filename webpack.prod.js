@@ -30,7 +30,6 @@ module.exports = {
     },
     externals: {
         react: 'react',
-        classnames: 'classnames',
         'lodash-es/isEqual': 'lodash-es/isEqual',
         'lodash-es/reduce': 'lodash-es/reduce',
         'lodash-es/forEach': 'lodash-es/forEach',

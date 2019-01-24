@@ -42,7 +42,6 @@ export interface IGutterStyle {
 export interface IGridStyle {
     width?: IGridSize
     height?: IGridSize
-    depth?: IGridSize
     margin?: IGutterStyle
     padding?: IGutterStyle
     isEmptySpace?: boolean
@@ -59,12 +58,11 @@ export interface IGridSize {
 }
 
 export type IGridTemplate = (string | IGridStyle)[]
-// tslint:disable-next-line:interface-over-type-literal
+
 export interface IGridMargin {
     before?: IGridSize
     after?: IGridSize
 }
-
 export type IGridSizeWithMargin = IGridSize & IGridMargin;
 
 export interface IGridElementsRange {
