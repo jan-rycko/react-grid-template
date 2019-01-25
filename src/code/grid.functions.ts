@@ -1,4 +1,4 @@
-import {CSSProperties} from 'react';
+import {CSSProperties, ReactNode} from 'react';
 import reduce from 'lodash-es/reduce';
 import forEach from 'lodash-es/forEach';
 import {
@@ -16,12 +16,12 @@ import {
     IGutterStyle,
     TemplateDirection,
     TemplateGutter,
-} from '../code/grid.model';
+} from './grid.model';
 import cloneDeep from 'lodash-es/cloneDeep';
-import isPlainObject from 'lodash-es/isPlainObject';
 import upperFirst from 'lodash-es/upperFirst';
 import {BoxSizingProperty} from 'csstype';
 import words from 'lodash-es/words';
+import {countComponents} from './grid.react-utils';
 
 const isConstantUnit = (unit: GridUnit): unit is GritConstantUnit => {
     return gridUnits.includes(unit) && !isFractionUnit(unit);
@@ -33,6 +33,13 @@ const isFractionUnit = (unit: GridUnit): unit is GridUnit.Fr => {
 
 export const repeatSize = (size: string, length: number): string[] => {
     return new Array(length).fill(size);
+};
+
+export const getListLength = (children: ReactNode, gridTemplate: IGridTemplate): number => {
+    const lineLength = gridTemplate.length;
+    const gridLength = countComponents(children);
+
+    return Math.ceil(gridLength / lineLength);
 };
 
 export const getGridStyle = (
@@ -341,6 +348,8 @@ const getConstantUnitSizeFromStats = ({ fr = 0, ...constantUnits }: IGridSize, f
 
 const getGutterStyle = (gutterName: TemplateGutter, gutterStyle: IGutterStyle): CSSProperties => {
     return reduce(gutterStyle, (acc, size, direction) => {
+        if (Object.keys(size).length === 0) return acc;
+
         return {
             ...acc,
             [`${gutterName}${upperFirst(direction)}`]: getCSSValue(size),
@@ -385,7 +394,7 @@ const getCSSValue = (size: IGridSize) => {
 
         const sign = Math.sign(value) === -1 ? '-' : '+';
         const absValue = Math.abs(value);
-        const formattedSign = acc === '' ? sign : ` ${sign} `;
+        const formattedSign = acc === '' ? (sign === '-' ? sign : '') : ` ${sign} `;
 
         return `${acc}${formattedSign}${absValue}${unit}`;
     }, '');

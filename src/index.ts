@@ -2,6 +2,7 @@ import {
     Grid,
     GridColumn,
     GridRow,
+    GridRepeat,
     IGridChildProps,
 } from './components/Grid';
 import {
@@ -26,6 +27,7 @@ export {
     Grid,
     GridRow,
     GridColumn,
+    GridRepeat,
     getGridStyle,
     repeatSize,
     IGridChildProps,
