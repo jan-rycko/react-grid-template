@@ -2,9 +2,11 @@ import {
     Grid,
     GridColumn,
     GridRow,
-    GridRepeat,
     IGridChildProps,
-} from './components/Grid';
+} from './components/grid/Grid';
+import {
+    GridRepeat,
+} from './components/grid-repeat/GridRepeat';
 import {
     TemplateDirection,
     TemplateGutter,
@@ -18,11 +20,12 @@ import {
     IGridTemplate,
 } from './code/grid.model';
 import {
-    getGridStyle,
     repeatSize,
+} from './code/grid.react-utils';
+import {
+    getGridStyle,
 } from './code/grid.functions';
 
-export default Grid;
 export {
     Grid,
     GridRow,

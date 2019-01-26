@@ -10,6 +10,7 @@ export enum TemplateGutter {
 }
 
 export enum GridUnit {
+    Auto = 'auto',
     Fr = 'fr',
     Px = 'px',
     Rem = 'rem',
@@ -28,6 +29,8 @@ export interface IGridTemplateDescriptor {
     direction?: TemplateDirection
     gridTemplate?: IGridTemplate,
     spanTemplate?: number[],
+    paddingGutter?: string | string[]
+    marginGutter?: string | string[]
     gutter?: string | string[],
     gutterAs?: TemplateGutter
 }
@@ -44,10 +47,10 @@ export interface IGridStyle {
     height?: IGridSize
     margin?: IGutterStyle
     padding?: IGutterStyle
-    isEmptySpace?: boolean
 }
 
 export interface IGridSize {
+    [GridUnit.Auto]?: boolean
     [GridUnit.Fr]?: number
     [GridUnit.Px]?: number
     [GridUnit.Rem]?: number

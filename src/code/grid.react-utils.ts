@@ -9,7 +9,8 @@ import {
     ReactNode,
     ReactNodeArray,
 } from 'react';
-import {IGridChildProps} from '../components/Grid';
+import {IGridChildProps} from '../components/grid/Grid';
+import {IGridTemplate} from './grid.model';
 
 export const isChildrenList = (element: ReactNode): element is ReactNodeArray => {
     return !!element && Array.isArray(element) && element.length > 0;
@@ -35,4 +36,15 @@ export const countComponents = (children: ReactNode): number => {
     });
 
     return length;
+};
+
+export const repeatSize = (size: string, length: number): string[] => {
+    return new Array(length).fill(size);
+};
+
+export const getListLength = (children: ReactNode, gridTemplate: IGridTemplate): number => {
+    const lineLength = gridTemplate.length;
+    const gridLength = countComponents(children);
+
+    return Math.ceil(gridLength / lineLength);
 };
