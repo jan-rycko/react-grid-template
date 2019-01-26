@@ -48,3 +48,7 @@ export const getListLength = (children: ReactNode, gridTemplate: IGridTemplate):
 
     return Math.ceil(gridLength / lineLength);
 };
+
+export const getByIndexOrLast = (array: any[], index: number, fallback: any = null) => {
+    return array[index] ? array[index] : array[array.length - 1] || fallback;
+};

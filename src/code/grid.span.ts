@@ -143,7 +143,7 @@ const mergeToSingleSize = (styles: IGridStyle[], direction: TemplateDirection): 
                     },
                 };
             } else {
-                sizeToAdd = addGridSizes(sizeToAdd, marginBefore, paddingBefore);
+                sizeToAdd = addGridSizes(sizeToAdd, marginBefore);
             }
         }
 
@@ -161,7 +161,7 @@ const mergeToSingleSize = (styles: IGridStyle[], direction: TemplateDirection): 
                     },
                 };
             } else {
-                sizeToAdd = addGridSizes(sizeToAdd, paddingAfter, marginAfter);
+                sizeToAdd = addGridSizes(sizeToAdd, marginAfter);
             }
         }
 

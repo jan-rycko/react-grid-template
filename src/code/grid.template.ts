@@ -5,13 +5,13 @@ import {
     getSizeProperties,
     gutterProperties,
     IGutterProperties,
-    sizeProperty,
 } from './grid.mappers';
 import reduce from 'lodash-es/reduce';
 import {addGridSizes} from './grid.math';
 import {expressionWordRegExp, getExpressionAsStyle, getSizeFromExpression} from './grid.expression';
-import {isConstantUnit} from './grid.type-guards';
+import {isConstantUnit} from './grid.typescript-helpers';
 import words from 'lodash-es/words';
+import isEmpty from 'lodash-es/isEmpty';
 
 export const getGridTemplateSizes = (
     gridTemplate: IGridTemplate,
@@ -32,8 +32,8 @@ interface IStatsAndSizes {
     styleMap: IGridStyle[]
 }
 
-const getGutterExpressionByIndex = (gutter: string[], index: number) => {
-    return gutter[index] || gutter[gutter.length - 1];
+const getGutterExpressionByIndex = (gutter: string[] | string, index: number) => {
+    return Array.isArray(gutter) ? gutter[index] || gutter[gutter.length - 1] : gutter;
 };
 
 const addGutterSizes = (
@@ -50,12 +50,21 @@ const addGutterSizes = (
     }
 };
 
-const getGutterSizes = (
+const getMarginFromEmptySpace = (emptySpace: IGutterProperties, marginGutter: string | string[]): IGridSize => {
+    return emptySpace.position.reduce((acc, pos) => addGridSizes(acc,
+        getSizeFromExpression(
+            getGutterExpressionByIndex(marginGutter, pos)
+        )
+    ), {});
+};
+
+const getGutterSizes = ({ marginGutter, paddingGutter, length, emptySpaces, gridPositions }: {
     marginGutter: string | string[],
     paddingGutter: string | string[],
     length: number,
-    emptySpaces: IGutterProperties[]
-): IGutterProperties[] => {
+    emptySpaces: IGutterProperties[],
+    gridPositions: Record<number, number>,
+}): IGutterProperties[] => {
     let gutterProperties: IGutterProperties = {};
 
     if (typeof marginGutter === 'string') {
@@ -67,46 +76,73 @@ const getGutterSizes = (
     }
 
     return new Array(length).fill(null).map((_, index) => {
-        let gutterToSet = {...gutterProperties};
+        let gutterFromProp = {...gutterProperties};
+        let gutterFromEmptySpaces: IGutterProperties = {};
 
         if (Array.isArray(marginGutter)) {
-            gutterToSet = addGutterSizes(
-                gutterToSet,
-                getGutterExpressionByIndex(marginGutter, index),
-                TemplateGutter.Margin
+            gutterFromProp = addGutterSizes(
+                gutterFromProp,
+                getGutterExpressionByIndex(marginGutter, gridPositions[index]),
+                TemplateGutter.Margin,
             )
         }
 
         if (Array.isArray(paddingGutter)) {
-            gutterToSet = addGutterSizes(
-                gutterToSet,
-                getGutterExpressionByIndex(paddingGutter, index),
-                TemplateGutter.Padding
+            gutterFromProp = addGutterSizes(
+                gutterFromProp,
+                getGutterExpressionByIndex(paddingGutter, gridPositions[index]),
+                TemplateGutter.Padding,
             )
         }
 
         if (emptySpaces[index]) {
             const { marginBefore, marginAfter } = emptySpaces[index];
+            const marginToAdd = getMarginFromEmptySpace(emptySpaces[index], marginGutter);
 
-            gutterToSet = {
-                ...gutterToSet,
-                marginBefore: addGridSizes(gutterToSet.marginBefore, marginBefore),
-                marginAfter: addGridSizes(gutterToSet.marginAfter, marginAfter),
+            gutterFromEmptySpaces = {
+                marginBefore: isEmpty(marginBefore) ? {} : addGridSizes(marginBefore, marginToAdd),
+                marginAfter: isEmpty(marginAfter) ? {} : addGridSizes(marginAfter, marginToAdd),
             }
         }
 
+        const { marginAfter, marginBefore, paddingAfter, paddingBefore } = gutterFromProp;
+        const { marginBefore: emptyBefore = {}, marginAfter: emptyAfter = {} } = gutterFromEmptySpaces;
+
         if (index === 0) {
-            const { marginAfter, paddingAfter } = gutterToSet;
-            return { marginAfter, paddingAfter, marginBefore: {}, paddingBefore: {} }
+            return {
+                marginBefore: emptyBefore,
+                marginAfter: addGridSizes(marginAfter, emptyAfter),
+                paddingBefore: {},
+                paddingAfter,
+            }
         }
 
         if (index === length - 1) {
-            const { marginBefore, paddingBefore} = gutterToSet;
-            return { marginAfter: {}, paddingAfter: {}, marginBefore, paddingBefore }
+            let emptyAfter: IGridSize = {};
+            const lastEmptySpace = emptySpaces[emptySpaces.length - 1] || {};
+            const lastEmptySpacePosition = lastEmptySpace.position || [];
+            const lastEmptySpaceIndex = lastEmptySpacePosition[lastEmptySpacePosition.length - 1];
+            const nextEmptySpaceIndex = emptySpaces.findIndex((space) => !!((space || {}).position || []).find(p => p > index));
+
+            if (lastEmptySpaceIndex > length - 1) {
+                emptyAfter = emptySpaces.slice(nextEmptySpaceIndex + 1).reduce((acc, space) => {
+                    return addGridSizes(acc, getMarginFromEmptySpace(space, marginGutter))
+                }, {} as IGridSize)
+            }
+
+            return {
+                marginBefore: addGridSizes(marginBefore, emptyBefore),
+                marginAfter: addGridSizes(marginAfter, emptyAfter),
+                paddingBefore,
+                paddingAfter: {},
+            }
         }
 
-
-        return gutterToSet;
+        return {
+            ...gutterFromProp,
+            marginBefore: addGridSizes(marginBefore, emptyBefore),
+            marginAfter: addGridSizes(marginAfter, emptyAfter),
+        };
     });
 };
 
@@ -114,14 +150,19 @@ export const isEmptySpaceExpression = (value: any): value is string => {
     return typeof value === 'string' && value.substr(0, 2) === '. ';
 };
 
-const getEmptySpacesAndRawGridTemplate = (gridTemplate: IGridTemplate): { emptySpaces: IGutterProperties[], newGridTemplate: IGridTemplate } => {
-    let elemIndex = 0;
-    const newGridTemplate = [];
-    const templateLength = gridTemplate.filter(value => !isEmptySpaceExpression(value)).length;
+const getEmptySpacesAndRawGridTemplate = (gridTemplate: IGridTemplate): {
+    emptySpaces: IGutterProperties[],
+    newGridTemplate: IGridTemplate,
+    gridPositions: Record<number, number>,
+} => {
+    let elemIndex = -1;
+    let gridPositions: Record<number, number> = {};
+    const newGridTemplate = gridTemplate.filter(value => !isEmptySpaceExpression(value));
+    const templateLength = newGridTemplate.length;
     const emptySpaces =  gridTemplate.reduce<IGutterProperties[]>((acc, value, index) => {
         if (!isEmptySpaceExpression(value)) {
             elemIndex++;
-            newGridTemplate.push(value);
+            gridPositions = { ...gridPositions, [elemIndex]: index };
             return acc;
         }
 
@@ -130,18 +171,32 @@ const getEmptySpacesAndRawGridTemplate = (gridTemplate: IGridTemplate): { emptyS
         const [ firstExpr ] = words(expression, expressionWordRegExp);
         const margin = firstExpr ? getSizeFromExpression(firstExpr) : {};
 
-        if (elemIndex === templateLength - 1) {
-            acc[elemIndex - 1] = {...acc[elemIndex - 1], marginAfter: margin};
+        if (elemIndex === -1) {
+            if (!acc[0]) acc[0] = {};
+            if (!acc[0].position) acc[0].position = [];
+
+            acc[0] = {
+                ...acc[0],
+                marginBefore: addGridSizes(margin, acc[0].marginBefore),
+                position: [ ...acc[0].position, index ],
+            };
 
             return acc;
         }
 
-        acc[elemIndex + 1] = {...acc[elemIndex - 1], marginBefore: margin};
+        if (!acc[elemIndex]) acc[elemIndex] = {};
+        if (!acc[elemIndex].position) acc[elemIndex].position = [];
+
+        acc[elemIndex] = {
+            ...acc[elemIndex],
+            marginAfter: addGridSizes(margin, acc[elemIndex].marginAfter),
+            position: [ ...acc[elemIndex].position, index ],
+        };
 
         return acc;
     }, new Array(templateLength).fill(null));
 
-    return { emptySpaces, newGridTemplate }
+    return { emptySpaces, newGridTemplate, gridPositions }
 };
 
 const getGridStyleMapWithStats = (
@@ -153,8 +208,8 @@ const getGridStyleMapWithStats = (
     const styleMap: IGridStyle[] = [];
     let directionStats: IGridSize = {};
 
-    const { emptySpaces, newGridTemplate } = getEmptySpacesAndRawGridTemplate(gridTemplate);
-    const gutterTemplate = getGutterSizes(marginGutter, paddingGutter, newGridTemplate.length, emptySpaces);
+    const { emptySpaces, newGridTemplate, gridPositions } = getEmptySpacesAndRawGridTemplate(gridTemplate);
+    const gutterTemplate = getGutterSizes({ marginGutter, paddingGutter, length: newGridTemplate.length, emptySpaces, gridPositions });
     const { sizeAlong } = getSizeProperties(direction);
 
     newGridTemplate.forEach((sizeDescriptor, index) => {

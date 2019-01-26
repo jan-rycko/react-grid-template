@@ -3,9 +3,15 @@ import {Children, cloneElement, CSSProperties, Fragment, FunctionComponent, Pure
 import isEqual from 'lodash-es/isEqual';
 import {IGridStyle, IGridTemplate, IGridTemplateDescriptor, TemplateDirection} from '../../code/grid.model';
 import {getGridStyle} from '../../code/grid.functions';
-import {countComponents, isChildOfType, isChildrenList, isReactComponent, getListLength, repeatSize} from '../../code/grid.react-utils';
+import {
+    isChildOfType,
+    isChildrenList,
+    isReactComponent,
+    getByIndexOrLast,
+} from '../../code/grid.react-utils';
 import union from 'lodash-es/union';
 import {GridRepeat} from '../grid-repeat/GridRepeat';
+import {isGridTemplateArray} from '../../code/grid.typescript-helpers';
 
 interface IGridProps extends IGridTemplateDescriptor, IGridChildProps {
     tag?: string | typeof Fragment
@@ -91,11 +97,11 @@ class Grid extends PureComponent<IGridProps, IGridState> {
     computeGrid = ({ gridTemplateToSet, spanTemplateToSet }: { gridTemplateToSet: IGridTemplate, spanTemplateToSet: number[] }) => {
         const {direction, gridTemplate, spanTemplate, marginGutter, paddingGutter, children } = this.props;
 
-        let gridLength = countComponents(children);
+        // let gridLength = countComponents(children);
 
-        if (isChildOfType<IGridProps>(children, GridRepeat)) {
-            gridLength = getListLength(children.props.children, children.props.gridTemplate);
-        }
+        // if (isChildOfType<IGridProps>(children, GridRepeat)) {
+        //     gridLength = getListLength(children.props.children, children.props.gridTemplate);
+        // }
 
         let gridToSet: IGridTemplate = gridTemplate;
         let spanToSet: number[] = spanTemplate;
@@ -108,12 +114,17 @@ class Grid extends PureComponent<IGridProps, IGridState> {
             spanToSet = spanTemplateToSet;
         }
 
-        if ((paddingGutter || marginGutter) && (!gridToSet || gridToSet.length === 0)) {
-            gridToSet = repeatSize('auto', gridLength);
+        if (
+            (paddingGutter || marginGutter)
+            && (!gridToSet
+                || (isGridTemplateArray(gridToSet) && gridToSet.length === 0)
+            )
+        ) {
+            gridToSet = ['auto'];
         }
 
         this.setState({
-            styles: getGridStyle(gridLength, { direction, gridTemplate: gridToSet, spanTemplate: spanToSet, marginGutter, paddingGutter }),
+            styles: getGridStyle({ direction, gridTemplate: gridToSet, spanTemplate: spanToSet, marginGutter, paddingGutter }),
         })
     };
 
@@ -126,7 +137,7 @@ class Grid extends PureComponent<IGridProps, IGridState> {
                 return child;
             }
 
-            const props: { style?: CSSProperties, styles?: CSSProperties[] } = {};
+            const props: { style?: CSSProperties, styles?: CSSProperties[], key?: any } = { key: i };
 
             if (styles) {
                 const elementIndex = i - diff;
@@ -134,7 +145,7 @@ class Grid extends PureComponent<IGridProps, IGridState> {
                 if (isChildOfType(child, GridRepeat)) {
                     props.styles = union(styles, child.props.styles || [])
                 } else if (styles[elementIndex]) {
-                    props.style = { ...styles[elementIndex], ...(child.props.style || {}) };
+                    props.style = { ...getByIndexOrLast(styles, elementIndex, {}), ...(child.props.style || {}) };
                 }
             }
 

@@ -10,7 +10,6 @@ import {calculateSizesWithSpanTemplate} from './grid.span';
 import {getSizesAsCSSProperties} from './grid.styling';
 
 export const getGridStyle = (
-    gridLength: number,
     {
         gridTemplate,
         spanTemplate,

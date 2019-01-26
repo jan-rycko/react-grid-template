@@ -41,6 +41,7 @@ export interface IGutterProperties {
     marginAfter?: IGridSize
     paddingBefore?: IGridSize
     paddingAfter?: IGridSize
+    position?: number[]
 }
 
 export const getGutterProperties = ({ margin = {}, padding = {} }: IGridStyle = {}, direction: TemplateDirection): IGutterProperties => {
