@@ -31,7 +31,5 @@ export const getGridStyle = (
 
     const styles: CSSProperties[] = getSizesAsCSSProperties(direction, sizes);
 
-    console.log(styles);
-
     return styles;
 };

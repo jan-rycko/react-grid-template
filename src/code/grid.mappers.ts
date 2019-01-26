@@ -9,6 +9,13 @@ export const getSecondDirection = (direction: TemplateDirection): TemplateDirect
     return direction === TemplateDirection.Row ? TemplateDirection.Column : TemplateDirection.Row;
 };
 
+export const getSizeProperties = (direction: TemplateDirection) => {
+    return {
+        sizeAlong: sizeProperty[direction],
+        sizeAcross: sizeProperty[getSecondDirection(direction)],
+    }
+};
+
 export const gutterProperties = {
     [TemplateDirection.Row]: ['left', 'right'],
     [TemplateDirection.Column]: ['top', 'bottom'],

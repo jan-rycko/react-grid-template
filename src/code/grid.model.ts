@@ -20,7 +20,7 @@ export enum GridUnit {
     Percent = '%',
 }
 
-export type GritConstantUnit = Exclude<GridUnit, GridUnit.Fr>;
+export type GritConstantUnit = Exclude<Exclude<GridUnit, GridUnit.Fr>, GridUnit.Auto>;
 
 export const gridUnits = Object.values(GridUnit);
 export const gridUnitRegExpPart = `(${gridUnits.join('|')})`;

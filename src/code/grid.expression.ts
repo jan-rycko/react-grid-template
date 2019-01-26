@@ -1,5 +1,5 @@
 import {GridUnit, gridUnitRegExpPart, IGridSize, IGridStyle, TemplateDirection} from './grid.model';
-import {getSecondDirection, sizeProperty} from './grid.mappers';
+import {getSizeProperties, sizeProperty} from './grid.mappers';
 import words from 'lodash-es/words';
 
 export const getExpressionValueRegex = (value: string): RegExp => {
@@ -66,11 +66,10 @@ export const getExpressionAsStyle = (value: string | number, direction: Template
     }
 
     const [ firstExpr, _, secondExpr ] = words(value, expressionWordRegExp);
-
-    console.log({ firstExpr, secondExpr, expressionWordRegExp });
+    const { sizeAlong, sizeAcross } = getSizeProperties(direction);
 
     return {
-        [sizeProperty[direction]]: firstExpr ? getSizeFromExpression(firstExpr) : {},
-        [sizeProperty[getSecondDirection(direction)]]: secondExpr ? getSizeFromExpression(secondExpr) : {},
+        [sizeAlong]: firstExpr ? getSizeFromExpression(firstExpr) : {},
+        [sizeAcross]: secondExpr ? getSizeFromExpression(secondExpr) : {},
     };
 };

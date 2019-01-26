@@ -3,7 +3,7 @@ import {CSSProperties} from 'react';
 import reduce from 'lodash-es/reduce';
 import upperFirst from 'lodash-es/upperFirst';
 import {BoxSizingProperty} from 'csstype';
-import {getSecondDirection, sizeProperty} from './grid.mappers';
+import {getSizeProperties} from './grid.mappers';
 
 export const getSizesAsCSSProperties = (
     direction: TemplateDirection,
@@ -28,20 +28,19 @@ const getGutterStyle = (gutterName: TemplateGutter, gutterStyle: IGutterStyle): 
 };
 
 const getSizeStyle = (size: IGridStyle, direction: TemplateDirection) => {
-    const directionSizeProp = sizeProperty[direction];
-    const directionSize = size[directionSizeProp];
+    const { sizeAlong, sizeAcross } = getSizeProperties(direction);
+    const directionSize = size[sizeAlong];
     const directionStyle = getCSSValue(directionSize);
-    const acrossDirectionSizeProp = sizeProperty[getSecondDirection(direction)];
-    const acrossDirectionSize = size[acrossDirectionSizeProp];
+    const acrossDirectionSize = size[sizeAcross];
     const acrossDirectionStyle = getCSSValue(acrossDirectionSize);
 
     return {
-        [directionSizeProp]: directionStyle,
-        ...(acrossDirectionStyle ? { [acrossDirectionSizeProp]: acrossDirectionStyle } : {}),
+        [sizeAlong]: directionStyle,
+        ...(acrossDirectionStyle ? { [sizeAcross]: acrossDirectionStyle } : {}),
     }
 };
 
-const getCSSValue = (size: IGridSize) => {
+const getCSSValue = (size: IGridSize = {}) => {
     if (size[GridUnit.Auto]) return 'auto';
 
     const calcPrefix = 'calc(';

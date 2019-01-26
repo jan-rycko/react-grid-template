@@ -2,7 +2,7 @@ import {GridUnit, IGridSize, IGridStyle, IGridTemplate, TemplateDirection, Templ
 import {
     getGutterGridStyle,
     getGutterProperties,
-    getSecondDirection,
+    getSizeProperties,
     gutterProperties,
     IGutterProperties,
     sizeProperty,
@@ -155,8 +155,7 @@ const getGridStyleMapWithStats = (
 
     const { emptySpaces, newGridTemplate } = getEmptySpacesAndRawGridTemplate(gridTemplate);
     const gutterTemplate = getGutterSizes(marginGutter, paddingGutter, newGridTemplate.length, emptySpaces);
-
-    console.log({ newGridTemplate, emptySpaces, gutterTemplate });
+    const { sizeAlong } = getSizeProperties(direction);
 
     newGridTemplate.forEach((sizeDescriptor, index) => {
         let cellStyle: IGridStyle;
@@ -171,7 +170,7 @@ const getGridStyleMapWithStats = (
 
         directionStats = addGridSizes(
             directionStats,
-            cellStyle[sizeProperty[direction]],
+            cellStyle[sizeAlong],
             marginBefore,
             marginAfter,
         );
@@ -189,12 +188,11 @@ const getGridStyleMapWithStats = (
 const getFullGridStyleFromStats = (baseStyle: IGridStyle, directionStats: IGridSize, direction: TemplateDirection): IGridStyle => {
     const { paddingBefore, paddingAfter, marginBefore, marginAfter } = getGutterProperties(baseStyle, direction);
     const [ gutterBefore, gutterAfter ] = gutterProperties[direction];
-    const directionSizeProperty = sizeProperty[direction];
-    const acrossDirectionSizeProperty = sizeProperty[getSecondDirection(direction)];
+    const { sizeAlong, sizeAcross } = getSizeProperties(direction);
 
     return {
-        [directionSizeProperty]: getConstantUnitSizeFromStats(baseStyle[directionSizeProperty], directionStats),
-        [acrossDirectionSizeProperty]: baseStyle[acrossDirectionSizeProperty],
+        [sizeAlong]: getConstantUnitSizeFromStats(baseStyle[sizeAlong], directionStats),
+        [sizeAcross]: baseStyle[sizeAcross],
         padding: {
             [gutterBefore]: paddingBefore,
             [gutterAfter]: paddingAfter,

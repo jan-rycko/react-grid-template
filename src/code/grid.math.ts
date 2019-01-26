@@ -1,9 +1,9 @@
-import {IGridSize, IGridSizeWithMargin} from './grid.model';
-import cloneDeep from 'lodash-es/cloneDeep';
+import {IGridSize} from './grid.model';
 import forEach from 'lodash-es/forEach';
+import {reduce} from 'lodash-es';
 
-const addSingleGridSize = (baseSize: IGridSizeWithMargin, sizeToAdd: IGridSize): IGridSizeWithMargin => {
-    const size = cloneDeep(baseSize);
+const addSingleGridSize = (baseSize: IGridSize, sizeToAdd: IGridSize): IGridSize => {
+    const size = { ...baseSize };
 
     forEach(sizeToAdd, (value, unit) => {
         if (typeof value === 'boolean') return;
@@ -15,8 +15,8 @@ const addSingleGridSize = (baseSize: IGridSizeWithMargin, sizeToAdd: IGridSize):
     return size;
 };
 
-export const addGridSizes = (baseSize: IGridSizeWithMargin = {}, ...sizesToAdd: IGridSize[]): IGridSizeWithMargin => {
-    let size = cloneDeep(baseSize);
+export const addGridSizes = (baseSize: IGridSize = {}, ...sizesToAdd: IGridSize[]): IGridSize => {
+    let size = { ...baseSize };
 
     sizesToAdd.forEach(sizeToAdd => {
         if (!sizeToAdd) return;
@@ -27,3 +27,14 @@ export const addGridSizes = (baseSize: IGridSizeWithMargin = {}, ...sizesToAdd: 
     return size;
 };
 
+export const subtractGridSizes = (baseSize: IGridSize, ...sizesToSubtract: IGridSize[]): IGridSize => {
+    let size = { ...baseSize };
+
+    const sizesToAdd = sizesToSubtract.map(size => {
+        return reduce(size, (acc, value, unit) => ({
+            ...acc,
+            [unit]: typeof value === 'boolean' ? value : -value,
+        }), {});
+    });
+    return addGridSizes(size, ...sizesToAdd)
+};

@@ -1,7 +1,20 @@
-import {IGridElementsRange, IGridSize, IGridSizeFraction, IGridStyle, TemplateDirection} from './grid.model';
+import {
+    IGridElementsRange,
+    IGridSize,
+    IGridSizeFraction,
+    IGridStyle,
+    TemplateDirection,
+    TemplateGutter,
+} from './grid.model';
 import reduce from 'lodash-es/reduce';
-import {addGridSizes} from './grid.math';
-import {getGutterProperties, getSecondDirection, gutterProperties, sizeProperty} from './grid.mappers';
+import {addGridSizes, subtractGridSizes} from './grid.math';
+import {
+    getGutterGridStyle,
+    getGutterProperties,
+    getSizeProperties,
+    gutterProperties,
+} from './grid.mappers';
+import isEmpty from 'lodash-es/isEmpty';
 
 export const calculateSizesWithSpanTemplate = (
     styles: IGridStyle[],
@@ -45,6 +58,7 @@ const calculateSizeWithSpan = (
     const length = spannedSizesWithOverlap.length;
 
     const spannedSizes = spannedSizesWithOverlap.map((size, i) => {
+
         if (startFraction && endFraction && length === 1) {
             return getSizePart(size, { fraction: endFraction - startFraction }, direction);
         }
@@ -68,21 +82,20 @@ const getSizePart = (
     {fraction, isPartEnd, isPartStart}: IGridSizeFraction,
     direction = TemplateDirection.Row,
 ): IGridStyle => {
-    let gutterToAdd: IGridSize = {};
+    let gutterToSubtract: IGridSize = {};
+    const { sizeAlong, sizeAcross } = getSizeProperties(direction);
     const { marginBefore, paddingBefore, marginAfter, paddingAfter } = getGutterProperties(size, direction);
-    const directionSizeProperty = sizeProperty[direction];
-    const acrossDirectionSizeProperty = sizeProperty[getSecondDirection(direction)];
-    const acrossDirectionSize = size[acrossDirectionSizeProperty];
+    const acrossDirectionSize = size[sizeAcross];
 
     if (isPartEnd) {
-        gutterToAdd = addGridSizes(marginBefore, paddingBefore);
+        gutterToSubtract = subtractGridSizes({}, marginBefore);
     }
 
     if (isPartStart) {
-        gutterToAdd = addGridSizes(marginAfter, paddingAfter);
+        gutterToSubtract = subtractGridSizes({}, marginBefore);
     }
 
-    const directionSize = reduce(size[directionSizeProperty], (acc, value, unit) => {
+    const directionSize = reduce(size[sizeAlong], (acc, value, unit) => {
         if (typeof value !== 'number') return acc;
 
         let prevValue = 0;
@@ -95,26 +108,28 @@ const getSizePart = (
             ...acc,
             [unit]: prevValue + value * fraction,
         };
-    }, gutterToAdd);
+    }, gutterToSubtract);
 
     return {
-        [directionSizeProperty]: directionSize,
-        [acrossDirectionSizeProperty]: acrossDirectionSize,
+        [sizeAlong]: directionSize,
+        [sizeAcross]: acrossDirectionSize,
+        ...getGutterGridStyle(direction, TemplateGutter.Padding, paddingBefore, paddingAfter),
+        ...getGutterGridStyle(direction, TemplateGutter.Margin, marginBefore, marginAfter),
     }
 };
 
 const mergeToSingleSize = (styles: IGridStyle[], direction: TemplateDirection): IGridStyle => {
     const lastIndex = styles.length - 1;
-    const directionSizeProperty = sizeProperty[direction];
+    const { sizeAlong } = getSizeProperties(direction);
     const [ gutterBefore, gutterAfter ] = gutterProperties[direction];
 
     return styles.reduce((finalSize, style, index) => {
         const { marginBefore, marginAfter, paddingBefore, paddingAfter } = getGutterProperties(style, direction);
-        const directionSize = style[directionSizeProperty];
+        const directionSize = style[sizeAlong];
 
         let sizeToAdd: IGridSize = { ...directionSize };
 
-        if (paddingBefore || marginBefore) {
+        if (!isEmpty(paddingBefore) || !isEmpty(marginBefore)) {
             if (index === 0) {
                 finalSize = {
                     ...finalSize,
@@ -132,7 +147,7 @@ const mergeToSingleSize = (styles: IGridStyle[], direction: TemplateDirection): 
             }
         }
 
-        if (paddingAfter || marginAfter) {
+        if (!isEmpty(paddingAfter) || !isEmpty(marginAfter)) {
             if (index === lastIndex) {
                 finalSize = {
                     ...finalSize,
@@ -152,7 +167,7 @@ const mergeToSingleSize = (styles: IGridStyle[], direction: TemplateDirection): 
 
         return {
             ...finalSize,
-            [directionSizeProperty]: addGridSizes(finalSize[directionSizeProperty], sizeToAdd),
+            [sizeAlong]: addGridSizes(finalSize[sizeAlong], sizeToAdd),
         };
     }, { margin: {}, padding: {} });
 };
