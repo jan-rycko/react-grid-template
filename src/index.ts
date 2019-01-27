@@ -21,7 +21,7 @@ import {
 } from './code/grid.model';
 import {
     repeatSize,
-} from './code/grid.react-utils';
+} from './utils/react-utils';
 import {
     getGridStyle,
 } from './code/grid.functions';

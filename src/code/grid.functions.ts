@@ -3,10 +3,9 @@ import {
     IGridStyle,
     IGridTemplateDescriptor,
     TemplateDirection,
-    TemplateGutter,
 } from './grid.model';
-import {getGridTemplateSizes} from './grid.template';
-import {calculateSizesWithSpanTemplate} from './grid.span';
+import GridTemplate from './grid.template';
+import GridSpan from './grid.span';
 import {getSizesAsCSSProperties} from './grid.styling';
 
 export const getGridStyle = (
@@ -22,13 +21,15 @@ export const getGridStyle = (
         return [];
     }
 
-    let sizes: IGridStyle[] = getGridTemplateSizes(gridTemplate, marginGutter, paddingGutter, direction);
+    const template = new GridTemplate(gridTemplate, marginGutter, paddingGutter, direction);
+    let gridStyles: IGridStyle[] = template.getStyles();
 
     if (spanTemplate) {
-        sizes = calculateSizesWithSpanTemplate(sizes, spanTemplate, direction);
+        const span = new GridSpan(gridStyles, direction);
+        gridStyles = span.calculateStyle(spanTemplate)
     }
 
-    const styles: CSSProperties[] = getSizesAsCSSProperties(direction, sizes);
+    const styles: CSSProperties[] = getSizesAsCSSProperties(direction, gridStyles);
 
     return styles;
 };

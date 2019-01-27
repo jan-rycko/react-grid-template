@@ -68,6 +68,14 @@ export interface IGridMargin {
 }
 export type IGridSizeWithMargin = IGridSize & IGridMargin;
 
+export interface IGutterProperties {
+    marginBefore?: IGridSize
+    marginAfter?: IGridSize
+    paddingBefore?: IGridSize
+    paddingAfter?: IGridSize
+    position?: number[]
+}
+
 export interface IGridElementsRange {
     start: number
     startFraction: number | null

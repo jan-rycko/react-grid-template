@@ -8,10 +8,11 @@ import {
     isChildrenList,
     isReactComponent,
     getByIndexOrLast,
-} from '../../code/grid.react-utils';
+    countComponents,
+} from '../../utils/react-utils';
 import union from 'lodash-es/union';
 import {GridRepeat} from '../grid-repeat/GridRepeat';
-import {isGridTemplateArray} from '../../code/grid.typescript-helpers';
+import {isGridTemplateArray} from '../../utils/typescript-utils';
 
 interface IGridProps extends IGridTemplateDescriptor, IGridChildProps {
     tag?: string | typeof Fragment
@@ -97,11 +98,11 @@ class Grid extends PureComponent<IGridProps, IGridState> {
     computeGrid = ({ gridTemplateToSet, spanTemplateToSet }: { gridTemplateToSet: IGridTemplate, spanTemplateToSet: number[] }) => {
         const {direction, gridTemplate, spanTemplate, marginGutter, paddingGutter, children } = this.props;
 
-        // let gridLength = countComponents(children);
+        let gridLength = countComponents(children);
 
-        // if (isChildOfType<IGridProps>(children, GridRepeat)) {
-        //     gridLength = getListLength(children.props.children, children.props.gridTemplate);
-        // }
+        if (isChildOfType<IGridProps>(children, GridRepeat)) {
+            // gridLength = children.props.children, children.props.gridTemplate;
+        }
 
         let gridToSet: IGridTemplate = gridTemplate;
         let spanToSet: number[] = spanTemplate;
@@ -120,7 +121,7 @@ class Grid extends PureComponent<IGridProps, IGridState> {
                 || (isGridTemplateArray(gridToSet) && gridToSet.length === 0)
             )
         ) {
-            gridToSet = ['auto'];
+            gridToSet = ['auto', 'auto', 'auto'];
         }
 
         this.setState({

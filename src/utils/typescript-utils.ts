@@ -1,4 +1,4 @@
-import {GridUnit, gridUnits, GritConstantUnit, IGridTemplate} from './grid.model';
+import {GridUnit, gridUnits, GritConstantUnit, IGridTemplate} from '../code/grid.model';
 import {ReactChild} from 'react';
 import isFunction from 'lodash-es/isFunction';
 
@@ -30,6 +30,10 @@ export const isGridTemplateArray = (
     gridTemplate: IGridTemplate | ((childrenToSet: ReactChild[], listIndex: number) => IGridTemplate),
 ): gridTemplate is IGridTemplate => {
     return Array.isArray(gridTemplate);
+};
+
+export const isEmptySpaceExpression = (value: any): value is string => {
+    return typeof value === 'string' && value.substr(0, 2) === '. ';
 };
 
 type Diff<T extends keyof any, U extends keyof any> =

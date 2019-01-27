@@ -1,4 +1,4 @@
-import {IGridSize, IGridStyle, TemplateDirection, TemplateGutter} from './grid.model';
+import {IGridSize, IGridStyle, IGutterProperties, TemplateDirection, TemplateGutter} from './grid.model';
 
 export const sizeProperty = {
     [TemplateDirection.Row]: 'width',
@@ -35,14 +35,6 @@ export const getGutterGridStyle = (
         },
     }
 };
-
-export interface IGutterProperties {
-    marginBefore?: IGridSize
-    marginAfter?: IGridSize
-    paddingBefore?: IGridSize
-    paddingAfter?: IGridSize
-    position?: number[]
-}
 
 export const getGutterProperties = ({ margin = {}, padding = {} }: IGridStyle = {}, direction: TemplateDirection): IGutterProperties => {
     const [ before, after ] = gutterProperties[direction];

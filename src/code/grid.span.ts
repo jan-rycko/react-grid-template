@@ -16,158 +16,165 @@ import {
 } from './grid.mappers';
 import isEmpty from 'lodash-es/isEmpty';
 
-export const calculateSizesWithSpanTemplate = (
-    styles: IGridStyle[],
-    spanTemplate: number[],
-    direction = TemplateDirection.Row,
-): IGridStyle[] => {
-    let spanSoFar = 0;
+class GridSpan {
+    gridStyles: IGridStyle[];
+    spanTemplate: number[];
+    direction: TemplateDirection;
 
-    return spanTemplate.reduce((acc, span) => {
-        acc.push(calculateSizeWithSpan(styles, span, spanSoFar, direction));
-
-        spanSoFar += span;
-
-        return acc;
-    }, []);
-};
-
-const getListPart = (span: number, spanSoFar: number): IGridElementsRange => {
-    const start = Math.floor(spanSoFar);
-    const end = Math.ceil(spanSoFar + span);
-    const startFraction = 1 - (spanSoFar % 1);
-    const endFraction = (spanSoFar + span) % 1;
-
-    return {
-        start,
-        startFraction: startFraction !== 1 ? startFraction : null,
-        end,
-        endFraction: endFraction !== 0 ? endFraction : null,
-    }
-};
-
-const calculateSizeWithSpan = (
-    sizes: IGridStyle[],
-    span: number,
-    spanSoFar: number,
-    direction = TemplateDirection.Row,
-): IGridStyle => {
-    const { start, end, startFraction, endFraction } = getListPart(span, spanSoFar);
-
-    const spannedSizesWithOverlap = sizes.slice(start, end);
-    const length = spannedSizesWithOverlap.length;
-
-    const spannedSizes = spannedSizesWithOverlap.map((size, i) => {
-
-        if (startFraction && endFraction && length === 1) {
-            return getSizePart(size, { fraction: endFraction - startFraction }, direction);
-        }
-
-        if (startFraction && i === 0) {
-            return getSizePart(size, { fraction: startFraction, isPartStart: true }, direction);
-        }
-
-        if (endFraction && i === length - 1) {
-            return getSizePart(size, { fraction: endFraction, isPartEnd: true }, direction);
-        }
-
-        return size;
-    });
-
-    return mergeToSingleSize(spannedSizes, direction);
-};
-
-const getSizePart = (
-    size: IGridStyle,
-    {fraction, isPartEnd, isPartStart}: IGridSizeFraction,
-    direction = TemplateDirection.Row,
-): IGridStyle => {
-    let gutterToSubtract: IGridSize = {};
-    const { sizeAlong, sizeAcross } = getSizeProperties(direction);
-    const { marginBefore, paddingBefore, marginAfter, paddingAfter } = getGutterProperties(size, direction);
-    const acrossDirectionSize = size[sizeAcross];
-
-    if (isPartEnd) {
-        gutterToSubtract = subtractGridSizes({}, marginBefore);
+    constructor(gridStyles: IGridStyle[], direction: TemplateDirection) {
+        this.gridStyles = gridStyles;
+        this.direction = direction;
     }
 
-    if (isPartStart) {
-        gutterToSubtract = subtractGridSizes({}, marginBefore);
+    calculateStyle(spanTemplate: number[]) {
+        this.spanTemplate = spanTemplate;
+        let spanSoFar = 0;
+
+        return spanTemplate.reduce((acc, span) => {
+            acc.push(this.calculateSizeWithSpan({ span, spanSoFar }));
+
+            spanSoFar += span;
+
+            return acc;
+        }, []);
     }
 
-    const directionSize = reduce(size[sizeAlong], (acc, value, unit) => {
-        if (typeof value !== 'number') return acc;
+    calculateSizeWithSpan = ({spanSoFar, span}: {
+        span: number,
+        spanSoFar: number,
+    }): IGridStyle => {
+        const { start, end, startFraction, endFraction } = this.getListPart(span, spanSoFar);
 
-        let prevValue = 0;
+        const spannedSizesWithOverlap = this.gridStyles.slice(start, end);
+        const length = spannedSizesWithOverlap.length;
 
-        if (acc[unit]) {
-            prevValue = acc[unit];
-        }
+        const spannedSizes = spannedSizesWithOverlap.map((size, i) => {
+
+            if (startFraction && endFraction && length === 1) {
+                return this.getSizePart(size, { fraction: endFraction - startFraction });
+            }
+
+            if (startFraction && i === 0) {
+                return this.getSizePart(size, { fraction: startFraction, isPartStart: true });
+            }
+
+            if (endFraction && i === length - 1) {
+                return this.getSizePart(size, { fraction: endFraction, isPartEnd: true });
+            }
+
+            return size;
+        });
+
+        return this.mergeToSingleSize(spannedSizes);
+    };
+
+    getListPart = (span: number, spanSoFar: number): IGridElementsRange => {
+        const start = Math.floor(spanSoFar);
+        const end = Math.min(Math.ceil(spanSoFar + span), this.gridStyles.length);
+        const startFraction = spanSoFar % 1;
+        const endFraction = (spanSoFar + span) % 1;
 
         return {
-            ...acc,
-            [unit]: prevValue + value * fraction,
-        };
-    }, gutterToSubtract);
+            start,
+            startFraction: startFraction !== 1 ? startFraction : null,
+            end,
+            endFraction: endFraction !== 0 ? endFraction : null,
+        }
+    };
 
-    return {
-        [sizeAlong]: directionSize,
-        [sizeAcross]: acrossDirectionSize,
-        ...getGutterGridStyle(direction, TemplateGutter.Padding, paddingBefore, paddingAfter),
-        ...getGutterGridStyle(direction, TemplateGutter.Margin, marginBefore, marginAfter),
-    }
-};
+    getSizePart = (
+        size: IGridStyle,
+        {fraction, isPartEnd, isPartStart}: IGridSizeFraction,
+    ): IGridStyle => {
+        let gutterToSubtract: IGridSize = {};
+        const { sizeAlong, sizeAcross } = getSizeProperties(this.direction);
+        const { marginBefore, paddingBefore, marginAfter, paddingAfter } = getGutterProperties(size, this.direction);
+        const acrossDirectionSize = size[sizeAcross];
 
-const mergeToSingleSize = (styles: IGridStyle[], direction: TemplateDirection): IGridStyle => {
-    const lastIndex = styles.length - 1;
-    const { sizeAlong } = getSizeProperties(direction);
-    const [ gutterBefore, gutterAfter ] = gutterProperties[direction];
-
-    return styles.reduce((finalSize, style, index) => {
-        const { marginBefore, marginAfter, paddingBefore, paddingAfter } = getGutterProperties(style, direction);
-        const directionSize = style[sizeAlong];
-
-        let sizeToAdd: IGridSize = { ...directionSize };
-
-        if (!isEmpty(paddingBefore) || !isEmpty(marginBefore)) {
-            if (index === 0) {
-                finalSize = {
-                    ...finalSize,
-                    margin: {
-                        ...finalSize.margin,
-                        [gutterBefore]: marginBefore,
-                    },
-                    padding: {
-                        ...finalSize.padding,
-                        [gutterBefore]: paddingBefore,
-                    },
-                };
-            } else {
-                sizeToAdd = addGridSizes(sizeToAdd, marginBefore);
-            }
+        if (isPartEnd) {
+            gutterToSubtract = subtractGridSizes({}, marginBefore);
         }
 
-        if (!isEmpty(paddingAfter) || !isEmpty(marginAfter)) {
-            if (index === lastIndex) {
-                finalSize = {
-                    ...finalSize,
-                    margin: {
-                        ...finalSize.margin,
-                        [gutterAfter]: marginAfter,
-                    },
-                    padding: {
-                        ...finalSize.padding,
-                        [gutterAfter]: paddingAfter,
-                    },
-                };
-            } else {
-                sizeToAdd = addGridSizes(sizeToAdd, marginAfter);
-            }
+        if (isPartStart) {
+            gutterToSubtract = subtractGridSizes({}, marginBefore);
         }
+
+        const directionSize = reduce(size[sizeAlong], (acc, value, unit) => {
+            if (typeof value !== 'number') return acc;
+
+            let prevValue = 0;
+
+            if (acc[unit]) {
+                prevValue = acc[unit];
+            }
+
+            return {
+                ...acc,
+                [unit]: prevValue + value * fraction,
+            };
+        }, gutterToSubtract);
 
         return {
-            ...finalSize,
-            [sizeAlong]: addGridSizes(finalSize[sizeAlong], sizeToAdd),
-        };
-    }, { margin: {}, padding: {} });
-};
+            [sizeAlong]: directionSize,
+            [sizeAcross]: acrossDirectionSize,
+            ...getGutterGridStyle(this.direction, TemplateGutter.Padding, paddingBefore, paddingAfter),
+            ...getGutterGridStyle(this.direction, TemplateGutter.Margin, marginBefore, marginAfter),
+        }
+    };
+
+    mergeToSingleSize = (styles: IGridStyle[]): IGridStyle => {
+        const lastIndex = styles.length - 1;
+        const { sizeAlong } = getSizeProperties(this.direction);
+        const [ gutterBefore, gutterAfter ] = gutterProperties[this.direction];
+
+        return styles.reduce((finalSize, style, index) => {
+            const { marginBefore, marginAfter, paddingBefore, paddingAfter } = getGutterProperties(style, this.direction);
+            const directionSize = style[sizeAlong];
+
+            let sizeToAdd: IGridSize = { ...directionSize };
+
+            if (!isEmpty(paddingBefore) || !isEmpty(marginBefore)) {
+                if (index === 0) {
+                    finalSize = {
+                        ...finalSize,
+                        margin: {
+                            ...finalSize.margin,
+                            [gutterBefore]: marginBefore,
+                        },
+                        padding: {
+                            ...finalSize.padding,
+                            [gutterBefore]: paddingBefore,
+                        },
+                    };
+                } else {
+                    sizeToAdd = addGridSizes(sizeToAdd, marginBefore);
+                }
+            }
+
+            if (!isEmpty(paddingAfter) || !isEmpty(marginAfter)) {
+                if (index === lastIndex) {
+                    finalSize = {
+                        ...finalSize,
+                        margin: {
+                            ...finalSize.margin,
+                            [gutterAfter]: marginAfter,
+                        },
+                        padding: {
+                            ...finalSize.padding,
+                            [gutterAfter]: paddingAfter,
+                        },
+                    };
+                } else {
+                    sizeToAdd = addGridSizes(sizeToAdd, marginAfter);
+                }
+            }
+
+            return {
+                ...finalSize,
+                [sizeAlong]: addGridSizes(finalSize[sizeAlong], sizeToAdd),
+            };
+        }, { margin: {}, padding: {} });
+    };
+}
+
+export default GridSpan;

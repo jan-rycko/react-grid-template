@@ -17,7 +17,6 @@ export const getSizeFromExpression = (expression: string, fraction: number = 1):
         eq = '',
         value1 = '',
         unit1 = '',
-        // tslint:disable-next-line:trailing-comma
         ...parts
     ] = expression.match(getExpressionValueRegex(expression)) || [];
 

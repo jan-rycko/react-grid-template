@@ -2,9 +2,13 @@ import {Children, CSSProperties, Fragment, PureComponent, ReactChild} from 'reac
 import * as React from 'react';
 import {Grid, IGridProps} from '../grid/Grid';
 import {IGridTemplate} from '../../code/grid.model';
-import {isGridTemplateFunction, isSpanTemplateFunction, Overwrite} from '../../code/grid.typescript-helpers';
-import {getByIndexOrLast} from '../../code/grid.react-utils';
-import {isEmptySpaceExpression} from '../../code/grid.template';
+import {
+    isEmptySpaceExpression,
+    isGridTemplateFunction,
+    isSpanTemplateFunction,
+    Overwrite,
+} from '../../utils/typescript-utils';
+import {getByIndexOrLast} from '../../utils/react-utils';
 
 interface IGridOverwriteProps {
     styles?: CSSProperties[]
@@ -45,7 +49,13 @@ class GridRepeat extends PureComponent<IGridRepeatProps> {
                 lineLength = (span || template.filter(value => !isEmptySpaceExpression(value))).length;
             }
 
-            if (!acc[indexOfLine]) acc[indexOfLine] = {};
+            if (!acc[indexOfLine]) acc[indexOfLine] = {
+                key: indexOfLine,
+                gridTemplate: template,
+                spanTemplate: span,
+                style: { ...getByIndexOrLast(styles, indexOfLine, {}), ...style },
+                ...gridProps,
+            };
 
             acc[indexOfLine] = {
                 ...acc[indexOfLine],
@@ -56,15 +66,6 @@ class GridRepeat extends PureComponent<IGridRepeatProps> {
             };
 
             if (indexInLine === lineLength - 1) {
-                acc[indexOfLine] = {
-                    ...acc[indexOfLine],
-                    key: indexOfLine,
-                    gridTemplate: template,
-                    spanTemplate: span,
-                    style: { ...getByIndexOrLast(styles, indexOfLine, {}), ...style },
-                    ...gridProps,
-                };
-
                 indexInLine = 0;
                 indexOfLine += 1;
             } else {
@@ -76,8 +77,6 @@ class GridRepeat extends PureComponent<IGridRepeatProps> {
     }
 
     render() {
-        console.log(this.gridProps, this.props.children);
-
         return (
             <Fragment>
                 {this.gridProps.map(gridProps => <Grid {...gridProps} />)}
