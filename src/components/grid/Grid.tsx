@@ -8,10 +8,12 @@ import {
     isChildrenList,
     isReactComponent,
     getByIndexOrLast,
-    countComponents,
+    mapComponentsWithElements,
+    mapComponents,
+    repeatSize,
 } from '../../utils/react-utils';
 import union from 'lodash-es/union';
-import {GridRepeat} from '../grid-repeat/GridRepeat';
+import {GridRepeat, IGridRepeatProps} from '../grid-repeat/GridRepeat';
 import {isGridTemplateArray} from '../../utils/typescript-utils';
 
 interface IGridProps extends IGridTemplateDescriptor, IGridChildProps {
@@ -27,6 +29,7 @@ export interface IGridChildProps {
 }
 
 interface IGridState {
+    repeater: Record<number, number>
     styles: CSSProperties[]
 }
 
@@ -35,8 +38,14 @@ const gridBaseStyle: CSSProperties = { display: 'flex' };
 const inlineGridBaseStyle: CSSProperties = { display: 'inline-flex' };
 const columnStyle: CSSProperties = { flexDirection: 'column' };
 
+interface IGridToSet {
+    gridTemplateToSet: IGridTemplate
+    spanTemplateToSet: number[]
+}
+
 class Grid extends PureComponent<IGridProps, IGridState> {
     state = {
+        repeater: {},
         styles: [],
     };
 
@@ -44,7 +53,14 @@ class Grid extends PureComponent<IGridProps, IGridState> {
         this.computeGrid(this.getGridFromChildren());
     }
 
-    componentDidUpdate({ children: prevChildren, tag: t, inline: i, style: s, size: si, span: sp, ...prevTemplateDescriptor }: PureComponent<IGridProps>['props']) {
+    componentDidUpdate({
+       children: prevChildren, tag: t, inline: i, style: s, size: si, span: sp, ...prevTemplateDescriptor
+    }: PureComponent<IGridProps, IGridState>['props'],
+    {
+        repeater: prevRepeater, styles: prevStyles
+    }: PureComponent<IGridProps, IGridState>['state']
+    ) {
+        const { repeater } = this.state;
         const { children, tag, inline, style, size, span, ...templateDescriptor } = this.props;
 
         const gridFromChildren = this.getGridFromChildren(children);
@@ -54,6 +70,8 @@ class Grid extends PureComponent<IGridProps, IGridState> {
             !isEqual(prevTemplateDescriptor, templateDescriptor)
             || !isEqual(gridFromChildren, prevGridFromChildren)
             || children !== prevChildren
+            || !isEqual(repeater, prevRepeater)
+            || !isEqual(repeater, prevRepeater)
         ) {
             this.computeGrid(gridFromChildren);
         }
@@ -71,7 +89,7 @@ class Grid extends PureComponent<IGridProps, IGridState> {
         return {};
     };
 
-    getGridFromChildren(children = this.props.children): { gridTemplateToSet: IGridTemplate, spanTemplateToSet: number[] } {
+    getGridFromChildren(children = this.props.children): IGridToSet {
         let grid: { size?: string | IGridStyle, span?: number }[] = [];
 
         if (isReactComponent<IGridChildProps>(children)) {
@@ -95,59 +113,79 @@ class Grid extends PureComponent<IGridProps, IGridState> {
         }, { gridTemplateToSet: [], spanTemplateToSet: [] });
     }
 
-    computeGrid = ({ gridTemplateToSet, spanTemplateToSet }: { gridTemplateToSet: IGridTemplate, spanTemplateToSet: number[] }) => {
-        const {direction, gridTemplate, spanTemplate, marginGutter, paddingGutter, children } = this.props;
+    getGridToSet({ gridTemplateToSet, spanTemplateToSet }: IGridToSet): IGridToSet {
+        const { gridTemplate, spanTemplate } = this.props;
 
-        let gridLength = countComponents(children);
-
-        if (isChildOfType<IGridProps>(children, GridRepeat)) {
-            // gridLength = children.props.children, children.props.gridTemplate;
+        return {
+            gridTemplateToSet: (gridTemplateToSet && gridTemplateToSet.length) ? gridTemplateToSet : gridTemplate,
+            spanTemplateToSet: (spanTemplateToSet && spanTemplateToSet.length) ? spanTemplateToSet : spanTemplate,
         }
+    }
 
-        let gridToSet: IGridTemplate = gridTemplate;
-        let spanToSet: number[] = spanTemplate;
+    computeGrid = (gridToSet: IGridToSet) => {
+        const {direction, marginGutter, paddingGutter, children } = this.props;
+        const { repeater } = this.state;
+        const componentsLength = mapComponents<IGridRepeatProps, number>(children, (child, componentIndex) => {
+            if (isChildOfType(child, GridRepeat) && repeater.hasOwnProperty(componentIndex)) {
+                return repeater[componentIndex];
+            }
 
-        if (gridTemplateToSet.length) {
-            gridToSet = gridTemplateToSet;
-        }
+            return 1;
+        }).reduce((acc, length) => acc + length, 0);
 
-        if (spanTemplateToSet.length) {
-            spanToSet = spanTemplateToSet;
-        }
+        let { gridTemplateToSet, spanTemplateToSet } = this.getGridToSet(gridToSet);
 
         if (
             (paddingGutter || marginGutter)
-            && (!gridToSet
-                || (isGridTemplateArray(gridToSet) && gridToSet.length === 0)
+            && (!gridTemplateToSet
+                || (isGridTemplateArray(gridTemplateToSet) && gridTemplateToSet.length === 0)
             )
         ) {
-            gridToSet = ['auto', 'auto', 'auto'];
+            gridTemplateToSet = repeatSize('auto', componentsLength);
+        }
+
+        const styles = getGridStyle({ direction, gridTemplate: gridTemplateToSet, spanTemplate: spanTemplateToSet, marginGutter, paddingGutter });
+
+        this.setState({ styles });
+    };
+
+    onRepeatGridSet = (componentIndex: number, listLength: number) => {
+        const {repeater} = this.state;
+
+        if (repeater.hasOwnProperty(componentIndex) && repeater[componentIndex] === listLength) {
+            return;
         }
 
         this.setState({
-            styles: getGridStyle({ direction, gridTemplate: gridToSet, spanTemplate: spanToSet, marginGutter, paddingGutter }),
-        })
+            repeater: {
+                ...repeater,
+                [componentIndex]: listLength
+            },
+        });
     };
 
     addStyleToProps = (children: ReactNode, styles: CSSProperties[]): ReactNode => {
-        let diff = 0;
+        let styleIndex = 0;
 
-        return Children.map(children, (child, i) => {
-            if (!isReactComponent<{ style?: CSSProperties, styles?: CSSProperties[] }>(child)) {
-                diff += 1;
-                return child;
+        return mapComponentsWithElements(children, (child, componentIndex, childIndex) => {
+            const props: IGridRepeatProps & IGridChildProps & { key: number } = { key: childIndex };
+
+            if (!styles) {
+                return cloneElement(child, props);
             }
 
-            const props: { style?: CSSProperties, styles?: CSSProperties[], key?: any } = { key: i };
+            if (isChildOfType(child, GridRepeat)) {
+                const repeaterLength = this.state.repeater[componentIndex] || 0;
 
-            if (styles) {
-                const elementIndex = i - diff;
+                props.styles = union(styles.slice(styleIndex, styleIndex + repeaterLength), child.props.styles || []);
+                props.onGridSet = this.onRepeatGridSet.bind(this, componentIndex);
 
-                if (isChildOfType(child, GridRepeat)) {
-                    props.styles = union(styles, child.props.styles || [])
-                } else if (styles[elementIndex]) {
-                    props.style = { ...getByIndexOrLast(styles, elementIndex, {}), ...(child.props.style || {}) };
-                }
+                styleIndex += repeaterLength;
+
+            } else if (styles[componentIndex]) {
+                props.style = { ...getByIndexOrLast(styles, styleIndex, {}), ...(child.props.style || {}) };
+
+                styleIndex += 1;
             }
 
             return cloneElement(child, props);

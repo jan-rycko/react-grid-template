@@ -10,17 +10,20 @@ import {
 } from '../../utils/typescript-utils';
 import {getByIndexOrLast} from '../../utils/react-utils';
 
-interface IGridOverwriteProps {
+export type DynamicGridCallback<T> = (listIndex: number, childrenToSet: Readonly<ReactChild[]>) => T
+
+export interface IGridRepeatOverwriteProps {
     styles?: CSSProperties[]
-    gridTemplate?: IGridTemplate | ((childrenToSet: Readonly<ReactChild[]>, listIndex: number) => IGridTemplate)
-    spanTemplate?: number[] | ((childrenToSet: Readonly<ReactChild[]>, listIndex: number) => number[])
+    onGridSet?(listLength: number): void
+    gridTemplate?: IGridTemplate | DynamicGridCallback<IGridTemplate>
+    spanTemplate?: number[] | DynamicGridCallback<number[]>
 }
 
-type IGridRepeatProps = Overwrite<IGridProps, IGridOverwriteProps>
+export type IGridRepeatProps = Overwrite<IGridProps, IGridRepeatOverwriteProps>
 
 class GridRepeat extends PureComponent<IGridRepeatProps> {
     get gridProps() {
-        const { children, gridTemplate, spanTemplate, styles = [], style = {}, ...gridProps } = this.props;
+        const { children, gridTemplate, spanTemplate, styles, onGridSet, ...gridProps } = this.props;
         const childrenArray = Children.toArray(children);
 
         let lineLength = 0;
@@ -28,20 +31,19 @@ class GridRepeat extends PureComponent<IGridRepeatProps> {
         let indexInLine = 0;
         let template: IGridTemplate;
         let span: number[];
-
-        return childrenArray.reduce((acc, child, index) => {
+        const props: (IGridProps & { key: number })[] = childrenArray.reduce((acc, child, index) => {
             if (indexInLine === 0) {
                 template = undefined;
                 span = undefined;
 
                 if (isGridTemplateFunction(gridTemplate)) {
-                    template = gridTemplate(childrenArray.slice(index), indexOfLine)
+                    template = gridTemplate(indexOfLine, childrenArray.slice(index))
                 } else {
                     template = gridTemplate;
                 }
 
                 if (isSpanTemplateFunction(spanTemplate)) {
-                    span = spanTemplate(childrenArray.slice(index), indexOfLine);
+                    span = spanTemplate(indexOfLine, childrenArray.slice(index));
                 } else {
                     span = spanTemplate;
                 }
@@ -53,7 +55,6 @@ class GridRepeat extends PureComponent<IGridRepeatProps> {
                 key: indexOfLine,
                 gridTemplate: template,
                 spanTemplate: span,
-                style: { ...getByIndexOrLast(styles, indexOfLine, {}), ...style },
                 ...gridProps,
             };
 
@@ -74,12 +75,25 @@ class GridRepeat extends PureComponent<IGridRepeatProps> {
 
             return acc;
         }, []);
+
+        if (onGridSet) onGridSet(props.length);
+
+        return props;
+    }
+
+    get gridPropsWithStyles() {
+        const {styles, style} = this.props;
+
+        return this.gridProps.map((props, indexOfLine) => ({
+            ...props,
+            style: { ...getByIndexOrLast(styles, indexOfLine, {}), ...style },
+        }))
     }
 
     render() {
         return (
             <Fragment>
-                {this.gridProps.map(gridProps => <Grid {...gridProps} />)}
+                {this.gridPropsWithStyles.map(gridProps => <Grid {...gridProps} />)}
             </Fragment>
         )
     }
