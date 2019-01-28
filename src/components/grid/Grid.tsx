@@ -50,7 +50,9 @@ class Grid extends PureComponent<IGridProps, IGridState> {
     };
 
     componentDidMount() {
-        this.computeGrid(this.getGridFromChildren());
+        if (Children.count(this.props.children)) {
+            this.computeGrid(this.getGridFromChildren());
+        }
     }
 
     componentDidUpdate({
@@ -58,8 +60,7 @@ class Grid extends PureComponent<IGridProps, IGridState> {
     }: PureComponent<IGridProps, IGridState>['props'],
     {
         repeater: prevRepeater, styles: prevStyles
-    }: PureComponent<IGridProps, IGridState>['state']
-    ) {
+    }: PureComponent<IGridProps, IGridState>['state']) {
         const { repeater } = this.state;
         const { children, tag, inline, style, size, span, ...templateDescriptor } = this.props;
 

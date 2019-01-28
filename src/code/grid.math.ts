@@ -1,6 +1,6 @@
-import {IGridSize} from './grid.model';
+import {IGridSize, IGutterStyle} from './grid.model';
 import forEach from 'lodash-es/forEach';
-import {reduce} from 'lodash-es';
+import reduce from 'lodash-es/reduce';
 
 const addSingleGridSize = (baseSize: IGridSize, sizeToAdd: IGridSize): IGridSize => {
     const size = { ...baseSize };
@@ -38,3 +38,10 @@ export const subtractGridSizes = (baseSize: IGridSize, ...sizesToSubtract: IGrid
     });
     return addGridSizes(size, ...sizesToAdd)
 };
+
+export const mergeGutterStyle = ({ left = {}, right = {}, top = {}, bottom = {} }: IGutterStyle, secondGutter: IGutterStyle): IGutterStyle => ({
+    left: addGridSizes(left, secondGutter.left),
+    right: addGridSizes(right, secondGutter.right),
+    top: addGridSizes(top, secondGutter.top),
+    bottom: addGridSizes(bottom, secondGutter.bottom),
+});

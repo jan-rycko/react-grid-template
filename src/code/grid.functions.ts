@@ -25,8 +25,8 @@ export const getGridStyle = (
     let gridStyles: IGridStyle[] = template.getStyles();
 
     if (spanTemplate) {
-        const span = new GridSpan(gridStyles, direction);
-        gridStyles = span.calculateStyle(spanTemplate)
+        const span = new GridSpan(spanTemplate, gridStyles, direction);
+        gridStyles = span.getStyles()
     }
 
     const styles: CSSProperties[] = getSizesAsCSSProperties(direction, gridStyles);

@@ -1,4 +1,3 @@
-
 export enum TemplateDirection {
     Row = 'row',
     Column = 'column',
@@ -7,6 +6,11 @@ export enum TemplateDirection {
 export enum TemplateGutter {
     Margin = 'margin',
     Padding = 'padding',
+}
+
+export enum SizeProperty {
+    Width = 'width',
+    Height = 'height',
 }
 
 export enum GridUnit {
@@ -43,10 +47,11 @@ export interface IGutterStyle {
 }
 
 export interface IGridStyle {
-    width?: IGridSize
-    height?: IGridSize
+    [SizeProperty.Width]?: IGridSize
+    [SizeProperty.Height]?: IGridSize
     margin?: IGutterStyle
     padding?: IGutterStyle
+    isEmptySpace?: boolean
 }
 
 export interface IGridSize {

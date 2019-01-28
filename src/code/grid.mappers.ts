@@ -1,8 +1,8 @@
-import {IGridSize, IGridStyle, IGutterProperties, TemplateDirection, TemplateGutter} from './grid.model';
+import {IGridSize, IGridStyle, IGutterProperties, SizeProperty, TemplateDirection, TemplateGutter} from './grid.model';
 
 export const sizeProperty = {
-    [TemplateDirection.Row]: 'width',
-    [TemplateDirection.Column]: 'height',
+    [TemplateDirection.Row]: SizeProperty.Width,
+    [TemplateDirection.Column]: SizeProperty.Height,
 };
 
 export const getSecondDirection = (direction: TemplateDirection): TemplateDirection => {

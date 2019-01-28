@@ -21,16 +21,16 @@ class GridSpan {
     spanTemplate: number[];
     direction: TemplateDirection;
 
-    constructor(gridStyles: IGridStyle[], direction: TemplateDirection) {
+    constructor(spanTemplate: number[], gridStyles: IGridStyle[], direction: TemplateDirection) {
+        this.spanTemplate = spanTemplate;
         this.gridStyles = gridStyles;
         this.direction = direction;
     }
 
-    calculateStyle(spanTemplate: number[]) {
-        this.spanTemplate = spanTemplate;
+    getStyles() {
         let spanSoFar = 0;
 
-        return spanTemplate.reduce((acc, span) => {
+        return this.spanTemplate.reduce((acc, span) => {
             acc.push(this.calculateSizeWithSpan({ span, spanSoFar }));
 
             spanSoFar += span;

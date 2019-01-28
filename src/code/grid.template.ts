@@ -6,257 +6,164 @@ import {
     gutterProperties,
 } from './grid.mappers';
 import reduce from 'lodash-es/reduce';
-import {addGridSizes} from './grid.math';
-import {expressionWordRegExp, getExpressionAsStyle, getSizeFromExpression} from './grid.expression';
+import {addGridSizes, mergeGutterStyle} from './grid.math';
+import {expressionWordRegExp, getExpressionAsStyle} from './grid.expression';
 import {isConstantUnit, isEmptySpaceExpression} from '../utils/typescript-utils';
 import words from 'lodash-es/words';
-import isEmpty from 'lodash-es/isEmpty';
-
-interface IStatsAndSizes {
-    directionStats: IGridSize
-    styleMap: IGridStyle[]
-}
+import {GridGutter} from './grid.gutter';
 
 class GridTemplate {
-    gridTemplate: IGridTemplate;
+    template: IGridTemplate;
+    length: number;
+    gridStyles: IGridStyle[] = [];
     marginGutter: string | string[];
     paddingGutter: string | string[];
     direction: TemplateDirection = TemplateDirection.Row;
+    directionStats: IGridSize = {};
+    components: IGridStyle[] = [];
+    componentsTemplate: IGridTemplate = [];
+    componentsPositions: Record<number, number> = {};
+    emptySpaces: IGridStyle[] = [];
+    emptySpacesPositions: Record<number, number> = {};
 
     constructor(
-        gridTemplate: IGridTemplate,
+        template: IGridTemplate,
         marginGutter: string | string[],
         paddingGutter: string | string[],
         direction: TemplateDirection = TemplateDirection.Row,
     ) {
-        this.gridTemplate = gridTemplate;
+        this.template = template;
+        this.length = this.template.length;
         this.marginGutter = marginGutter;
         this.paddingGutter = paddingGutter;
         this.direction = direction;
     }
 
     getStyles = (): IGridStyle[] => {
-        const {
-            directionStats,
-            styleMap,
-        } = this.getGridStyleMapWithStats();
+        this.setComponents();
+        this.setEmptySpaces();
+        this.addGridStyles();
+        this.getDirectionStats();
 
-        return styleMap.map(style => this.getFullGridStyleFromStats(style, directionStats));
+        return this.gridStyles.map(this.getFullGridStyleFromStats);
     };
 
-    getGridStyleMapWithStats = (): IStatsAndSizes => {
-        const styleMap: IGridStyle[] = [];
-        let directionStats: IGridSize = {};
+    private setComponents() {
+        let elemIndex = -1;
+        this.componentsTemplate = [];
 
-        const { emptySpaces, newGridTemplate, gridPositions } = this.getEmptySpacesAndRawGridTemplate();
-        const gutterTemplate = this.getGutterTemplate({ length: newGridTemplate.length, emptySpaces, gridPositions });
-        const { sizeAlong } = getSizeProperties(this.direction);
+        this.components = this.template.map((value, index) => {
+            const isComponentExpression = !isEmptySpaceExpression(value);
 
-        newGridTemplate.forEach((sizeDescriptor, index) => {
-            let cellStyle: IGridStyle;
-
-            if (typeof sizeDescriptor === 'string') {
-                cellStyle = getExpressionAsStyle(sizeDescriptor, this.direction);
-            } else {
-                cellStyle = sizeDescriptor;
+            if (!isComponentExpression) {
+                return null;
             }
 
-            const { marginBefore, marginAfter, paddingBefore, paddingAfter } = gutterTemplate[index];
+            elemIndex++;
 
-            directionStats = addGridSizes(
-                directionStats,
-                cellStyle[sizeAlong],
-                marginBefore,
-                marginAfter,
-            );
+            this.componentsTemplate.push(value);
+            this.componentsPositions = { ...this.componentsPositions, [index]: elemIndex };
 
-            styleMap[index] = {
-                ...cellStyle,
-                ...getGutterGridStyle(this.direction, TemplateGutter.Padding, paddingBefore, paddingAfter),
-                ...getGutterGridStyle(this.direction, TemplateGutter.Margin, marginBefore, marginAfter),
-            };
+            if (typeof value === 'string') {
+                return getExpressionAsStyle(value, this.direction);
+            } else {
+                return value;
+            }
         });
+    }
 
-        return { directionStats, styleMap }
-    };
-
-    getEmptySpacesAndRawGridTemplate = (): {
-        emptySpaces: IGutterProperties[],
-        newGridTemplate: IGridTemplate,
-        gridPositions: Record<number, number>,
-    } => {
+    private setEmptySpaces() {
+        this.emptySpacesPositions = {};
         let elemIndex = -1;
-        let gridPositions: Record<number, number> = {};
-        const newGridTemplate = this.gridTemplate.filter(value => !isEmptySpaceExpression(value));
-        const templateLength = newGridTemplate.length;
 
-        const emptySpaces = this.gridTemplate.reduce<IGutterProperties[]>((acc, value, index) => {
+        this.emptySpaces = this.template.map((value, index) => {
             if (!isEmptySpaceExpression(value)) {
                 elemIndex++;
-                gridPositions = { ...gridPositions, [elemIndex]: index };
-                return acc;
+                return null;
             }
 
             const expression = value.replace('. ', '');
 
             const [ firstExpr ] = words(expression, expressionWordRegExp);
-            const margin = firstExpr ? getSizeFromExpression(firstExpr) : {};
 
-            if (elemIndex === -1) {
-                if (!acc[0]) acc[0] = {};
-                if (!acc[0].position) acc[0].position = [];
+            const boxStyle = firstExpr ? getExpressionAsStyle(firstExpr, this.direction) : {};
 
-                acc[0] = {
-                    ...acc[0],
-                    marginBefore: addGridSizes(margin, acc[0].marginBefore),
-                    position: [ ...acc[0].position, index ],
-                };
+            this.emptySpacesPositions = {
+                ...this.emptySpacesPositions,
+                [index]: elemIndex === -1 ? Object.values(this.componentsPositions)[0] : elemIndex
+            };
 
+            return {
+                ...boxStyle,
+                isEmptySpace: true,
+            };
+        });
+    }
+
+    private addGridStyles = () => {
+        const { gutterTemplate } = new GridGutter(this, this.marginGutter, this.paddingGutter, this.direction);
+
+        this.gridStyles = this.components.map((component, index) => {
+            if (component === null) {
+                return null;
+            }
+
+            if (!gutterTemplate[index]) {
+                return component;
+            }
+
+            const { marginBefore, marginAfter, paddingBefore, paddingAfter } = gutterTemplate[index];
+            const [ gutterBefore, gutterAfter ] = gutterProperties[this.direction];
+
+            return {
+                ...component,
+                margin: mergeGutterStyle(component.margin || {}, {
+                    [gutterBefore]: marginBefore,
+                    [gutterAfter]: marginAfter,
+                }),
+                padding: mergeGutterStyle(component.padding || {}, {
+                    [gutterBefore]: paddingBefore,
+                    [gutterAfter]: paddingAfter,
+                })
+            }
+        }).filter(style => style !== null);
+    };
+
+    getDirectionStats = () => {
+        const { sizeAlong } = getSizeProperties(this.direction);
+
+        this.directionStats = this.gridStyles.reduce<IGridSize>((acc, style) => {
+            if (style === null) {
                 return acc;
             }
 
-            if (!acc[elemIndex]) acc[elemIndex] = {};
-            if (!acc[elemIndex].position) acc[elemIndex].position = [];
+            const size = style[sizeAlong] || {};
+            const { marginBefore, marginAfter } = getGutterProperties(style, this.direction);
 
-            acc[elemIndex] = {
-                ...acc[elemIndex],
-                marginAfter: addGridSizes(margin, acc[elemIndex].marginAfter),
-                position: [ ...acc[elemIndex].position, index ],
-            };
-
-            return acc;
-        }, new Array(templateLength).fill(null));
-
-        return { emptySpaces, newGridTemplate, gridPositions }
+            return addGridSizes(
+                acc,
+                size,
+                marginBefore,
+                marginAfter
+            );
+        }, {});
     };
 
-    getGutterExpressionByIndex = (gutter: string[] | string, index: number) => {
-        return Array.isArray(gutter) ? gutter[index] || gutter[gutter.length - 1] : gutter;
-    };
-
-    addGutterProperties = (
-        gutterProperties: IGutterProperties,
-        gutter: string,
-        gutterType: TemplateGutter,
-    ): IGutterProperties => {
-        const gutterSize = getSizeFromExpression(gutter, .5);
-
-        return {
-            ...gutterProperties,
-            [`${gutterType}Before`]: { ...gutterSize},
-            [`${gutterType}After`]: { ...gutterSize},
-        }
-    };
-
-    getMarginFromEmptySpace = (emptySpace: IGutterProperties, marginGutter: string | string[]): IGridSize => {
-        return emptySpace.position.reduce((acc, pos) => addGridSizes(acc,
-            getSizeFromExpression(
-                this.getGutterExpressionByIndex(marginGutter, pos),
-            ),
-        ), {});
-    };
-
-    getGutterTemplate = ({ length, emptySpaces, gridPositions }: {
-        length: number,
-        emptySpaces: IGutterProperties[],
-        gridPositions: Record<number, number>,
-    }): IGutterProperties[] => {
-        let gutterProperties: IGutterProperties = {};
-
-        if (typeof this.marginGutter === 'string') {
-            gutterProperties = this.addGutterProperties(gutterProperties, this.marginGutter, TemplateGutter.Margin);
-        }
-
-        if (typeof this.paddingGutter === 'string') {
-            gutterProperties = this.addGutterProperties(gutterProperties, this.paddingGutter, TemplateGutter.Padding);
-        }
-
-        return new Array(length).fill(null).map((_, index) => {
-            let gutterFromProp = {...gutterProperties};
-            let gutterFromEmptySpaces: IGutterProperties = {};
-
-            if (Array.isArray(this.marginGutter)) {
-                gutterFromProp = this.addGutterProperties(
-                    gutterFromProp,
-                    this.getGutterExpressionByIndex(this.marginGutter, gridPositions[index]),
-                    TemplateGutter.Margin,
-                )
-            }
-
-            if (Array.isArray(this.paddingGutter)) {
-                gutterFromProp = this.addGutterProperties(
-                    gutterFromProp,
-                    this.getGutterExpressionByIndex(this.paddingGutter, gridPositions[index]),
-                    TemplateGutter.Padding,
-                )
-            }
-
-            if (emptySpaces[index]) {
-                const { marginBefore, marginAfter } = emptySpaces[index];
-                const marginToAdd = this.getMarginFromEmptySpace(emptySpaces[index], this.marginGutter);
-
-                gutterFromEmptySpaces = {
-                    marginBefore: isEmpty(marginBefore) ? {} : addGridSizes(marginBefore, marginToAdd),
-                    marginAfter: isEmpty(marginAfter) ? {} : addGridSizes(marginAfter, marginToAdd),
-                }
-            }
-
-            const { marginAfter, marginBefore, paddingAfter, paddingBefore } = gutterFromProp;
-            const { marginBefore: emptyBefore = {}, marginAfter: emptyAfter = {} } = gutterFromEmptySpaces;
-
-            if (index === 0) {
-                return {
-                    marginBefore: emptyBefore,
-                    marginAfter: addGridSizes(marginAfter, emptyAfter),
-                    paddingBefore: {},
-                    paddingAfter,
-                }
-            }
-
-            if (index === length - 1) {
-                let emptyAfter: IGridSize = {};
-                const lastEmptySpace = emptySpaces[emptySpaces.length - 1] || {};
-                const lastEmptySpacePosition = lastEmptySpace.position || [];
-                const lastEmptySpaceIndex = lastEmptySpacePosition[lastEmptySpacePosition.length - 1];
-                const nextEmptySpaceIndex = emptySpaces.findIndex((space) => !!((space || {}).position || []).find(p => p > index));
-
-                if (lastEmptySpaceIndex > length - 1) {
-                    emptyAfter = emptySpaces.slice(nextEmptySpaceIndex + 1).reduce((acc, space) => {
-                        return addGridSizes(acc, this.getMarginFromEmptySpace(space, this.marginGutter))
-                    }, {} as IGridSize)
-                }
-
-                return {
-                    marginBefore: addGridSizes(marginBefore, emptyBefore),
-                    marginAfter: emptyAfter,
-                    paddingBefore,
-                    paddingAfter: {},
-                }
-            }
-
-            return {
-                ...gutterFromProp,
-                marginBefore: addGridSizes(marginBefore, emptyBefore),
-                marginAfter: addGridSizes(marginAfter, emptyAfter),
-            };
-        });
-    };
-
-    getFullGridStyleFromStats = (baseStyle: IGridStyle, directionStats: IGridSize): IGridStyle => {
+    getFullGridStyleFromStats = (baseStyle: IGridStyle): IGridStyle => {
         const { paddingBefore, paddingAfter, marginBefore, marginAfter } = getGutterProperties(baseStyle, this.direction);
         const [ gutterBefore, gutterAfter ] = gutterProperties[this.direction];
         const { sizeAlong, sizeAcross } = getSizeProperties(this.direction);
 
         return {
-            [sizeAlong]: this.getConstantUnitSizeFromStats(baseStyle[sizeAlong], directionStats),
+            [sizeAlong]: this.getConstantUnitSizeFromStats(baseStyle[sizeAlong], this.directionStats),
             [sizeAcross]: baseStyle[sizeAcross],
             padding: {
                 [gutterBefore]: paddingBefore,
                 [gutterAfter]: paddingAfter,
             },
             margin: {
-                [gutterBefore]: this.getConstantUnitSizeFromStats(marginBefore, directionStats),
-                [gutterAfter]: this.getConstantUnitSizeFromStats(marginAfter, directionStats),
+                [gutterBefore]: this.getConstantUnitSizeFromStats(marginBefore, this.directionStats),
+                [gutterAfter]: this.getConstantUnitSizeFromStats(marginAfter, this.directionStats),
             },
         };
     };

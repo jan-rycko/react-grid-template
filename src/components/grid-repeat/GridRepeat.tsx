@@ -22,6 +22,14 @@ export interface IGridRepeatOverwriteProps {
 export type IGridRepeatProps = Overwrite<IGridProps, IGridRepeatOverwriteProps>
 
 class GridRepeat extends PureComponent<IGridRepeatProps> {
+    // componentDidMount() {
+    //     console.log('componentDidMount', this.props.styles);
+    // }
+    //
+    // componentDidUpdate() {
+    //     console.log('componentDidUpdate',this.props.styles);
+    // }
+
     get gridProps() {
         const { children, gridTemplate, spanTemplate, styles, onGridSet, ...gridProps } = this.props;
         const childrenArray = Children.toArray(children);
