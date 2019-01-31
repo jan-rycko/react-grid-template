@@ -15,27 +15,33 @@ import {
     gutterProperties,
 } from './grid.mappers';
 import isEmpty from 'lodash-es/isEmpty';
+import GridTemplate from './grid.template';
 
 class GridSpan {
+    gridTemplate: GridTemplate;
     gridStyles: IGridStyle[];
     spanTemplate: number[];
     direction: TemplateDirection;
 
-    constructor(spanTemplate: number[], gridStyles: IGridStyle[], direction: TemplateDirection) {
+    constructor(gridTemplate: GridTemplate, spanTemplate: number[], gridStyles: IGridStyle[], direction: TemplateDirection) {
+        this.gridTemplate = gridTemplate;
         this.spanTemplate = spanTemplate;
         this.gridStyles = gridStyles;
         this.direction = direction;
     }
 
-    getStyles() {
+    getStyles(): IGridStyle[] {
         let spanSoFar = 0;
 
         return this.spanTemplate.reduce((acc, span) => {
-            acc.push(this.calculateSizeWithSpan({ span, spanSoFar }));
+            const style = [
+                ...acc,
+                this.calculateSizeWithSpan({ span, spanSoFar }),
+            ];
 
             spanSoFar += span;
 
-            return acc;
+            return style;
         }, []);
     }
 

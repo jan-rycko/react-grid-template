@@ -72,7 +72,6 @@ class Grid extends PureComponent<IGridProps, IGridState> {
             || !isEqual(gridFromChildren, prevGridFromChildren)
             || children !== prevChildren
             || !isEqual(repeater, prevRepeater)
-            || !isEqual(repeater, prevRepeater)
         ) {
             this.computeGrid(gridFromChildren);
         }

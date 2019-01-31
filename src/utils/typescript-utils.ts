@@ -14,16 +14,10 @@ export const isAutoUnit = (unit: GridUnit): unit is GridUnit.Auto => {
     return unit === GridUnit.Auto;
 };
 
-export const isGridTemplateFunction = (
-    gridTemplate: IGridTemplate | DynamicGridCallback<IGridTemplate>,
-): gridTemplate is DynamicGridCallback<IGridTemplate> => {
-    return isFunction(gridTemplate);
-};
-
-export const isSpanTemplateFunction = (
-    spanTemplate: number[] | DynamicGridCallback<number[]>
-): spanTemplate is DynamicGridCallback<number[]> => {
-    return isFunction(spanTemplate);
+export const isDynamicTemplateFunction = <T extends any>(
+    template: T | DynamicGridCallback<T>,
+): template is DynamicGridCallback<T> => {
+    return isFunction(template);
 };
 
 export const isGridTemplateArray = (

@@ -14,14 +14,11 @@ class GridGutter {
 
     constructor(
         gridTemplate: GridTemplate,
-        marginGutter: string | string[],
-        paddingGutter: string | string[],
-        direction: TemplateDirection = TemplateDirection.Row,
     ) {
         this.gridTemplate = gridTemplate;
-        this.marginGutter = marginGutter;
-        this.paddingGutter = paddingGutter;
-        this.direction = direction;
+        this.marginGutter = gridTemplate.marginGutter;
+        this.paddingGutter = gridTemplate.paddingGutter;
+        this.direction = gridTemplate.direction;
 
         this.setGutterWithEmptySpaces();
         this.setGutterTemplate();

@@ -4,8 +4,7 @@ import {Grid, IGridProps} from '../grid/Grid';
 import {IGridTemplate} from '../../code/grid.model';
 import {
     isEmptySpaceExpression,
-    isGridTemplateFunction,
-    isSpanTemplateFunction,
+    isDynamicTemplateFunction,
     Overwrite,
 } from '../../utils/typescript-utils';
 import {getByIndexOrLast} from '../../utils/react-utils';
@@ -22,49 +21,40 @@ export interface IGridRepeatOverwriteProps {
 export type IGridRepeatProps = Overwrite<IGridProps, IGridRepeatOverwriteProps>
 
 class GridRepeat extends PureComponent<IGridRepeatProps> {
-    // componentDidMount() {
-    //     console.log('componentDidMount', this.props.styles);
-    // }
-    //
-    // componentDidUpdate() {
-    //     console.log('componentDidUpdate',this.props.styles);
-    // }
+    private childrenArray: ReactChild[];
+
+    private getStaticOrDynamicTemplate<T>(template: T | DynamicGridCallback<T>, indexOfLine: number, firstChildInLineIndex: number): T {
+        if (!isDynamicTemplateFunction(template)) {
+            return template;
+        }
+
+        return template(indexOfLine, this.childrenArray.slice(firstChildInLineIndex));
+    };
 
     get gridProps() {
         const { children, gridTemplate, spanTemplate, styles, onGridSet, ...gridProps } = this.props;
-        const childrenArray = Children.toArray(children);
+        this.childrenArray = Children.toArray(children);
 
         let lineLength = 0;
         let indexOfLine = 0;
         let indexInLine = 0;
         let template: IGridTemplate;
         let span: number[];
-        const props: (IGridProps & { key: number })[] = childrenArray.reduce((acc, child, index) => {
+
+        const props: (IGridProps & { key: number })[] = this.childrenArray.reduce((acc, child, index) => {
             if (indexInLine === 0) {
-                template = undefined;
-                span = undefined;
-
-                if (isGridTemplateFunction(gridTemplate)) {
-                    template = gridTemplate(indexOfLine, childrenArray.slice(index))
-                } else {
-                    template = gridTemplate;
-                }
-
-                if (isSpanTemplateFunction(spanTemplate)) {
-                    span = spanTemplate(indexOfLine, childrenArray.slice(index));
-                } else {
-                    span = spanTemplate;
-                }
+                template = this.getStaticOrDynamicTemplate(gridTemplate, indexOfLine, index);
+                span = this.getStaticOrDynamicTemplate(spanTemplate, indexOfLine, index);
 
                 lineLength = (span || template.filter(value => !isEmptySpaceExpression(value))).length;
-            }
 
-            if (!acc[indexOfLine]) acc[indexOfLine] = {
-                key: indexOfLine,
-                gridTemplate: template,
-                spanTemplate: span,
-                ...gridProps,
-            };
+                acc[indexOfLine] = {
+                    key: indexOfLine,
+                    gridTemplate: template,
+                    spanTemplate: span,
+                    ...gridProps,
+                };
+            }
 
             acc[indexOfLine] = {
                 ...acc[indexOfLine],

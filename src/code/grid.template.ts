@@ -1,6 +1,5 @@
-import {GridUnit, IGridSize, IGridStyle, IGridTemplate, TemplateDirection, TemplateGutter, IGutterProperties} from './grid.model';
+import {GridUnit, IGridSize, IGridStyle, IGridTemplate, IGutterProperties, TemplateDirection} from './grid.model';
 import {
-    getGutterGridStyle,
     getGutterProperties,
     getSizeProperties,
     gutterProperties,
@@ -25,6 +24,8 @@ class GridTemplate {
     componentsPositions: Record<number, number> = {};
     emptySpaces: IGridStyle[] = [];
     emptySpacesPositions: Record<number, number> = {};
+    gutterTemplate: IGutterProperties[];
+    gutterTemplateWithEmptySpaces: IGutterProperties[];
 
     constructor(
         template: IGridTemplate,
@@ -37,11 +38,13 @@ class GridTemplate {
         this.marginGutter = marginGutter;
         this.paddingGutter = paddingGutter;
         this.direction = direction;
+
+        this.setComponents();
+        this.setEmptySpaces();
+        this.setGutterTemplate();
     }
 
     getStyles = (): IGridStyle[] => {
-        this.setComponents();
-        this.setEmptySpaces();
         this.addGridStyles();
         this.getDirectionStats();
 
@@ -78,21 +81,22 @@ class GridTemplate {
 
         this.emptySpaces = this.template.map((value, index) => {
             if (!isEmptySpaceExpression(value)) {
+
+                if (typeof value === 'object' && value.isEmptySpace) {
+                    this.addEmptySpacePosition(index, elemIndex);
+                    return value;
+                }
+
                 elemIndex++;
                 return null;
             }
 
             const expression = value.replace('. ', '');
-
             const [ firstExpr ] = words(expression, expressionWordRegExp);
 
             const boxStyle = firstExpr ? getExpressionAsStyle(firstExpr, this.direction) : {};
 
-            this.emptySpacesPositions = {
-                ...this.emptySpacesPositions,
-                [index]: elemIndex === -1 ? Object.values(this.componentsPositions)[0] : elemIndex
-            };
-
+            this.addEmptySpacePosition(index, elemIndex);
             return {
                 ...boxStyle,
                 isEmptySpace: true,
@@ -100,19 +104,35 @@ class GridTemplate {
         });
     }
 
-    private addGridStyles = () => {
-        const { gutterTemplate } = new GridGutter(this, this.marginGutter, this.paddingGutter, this.direction);
+    private addEmptySpacePosition = (index: number, elemIndex: number) => {
+        this.emptySpacesPositions = {
+            ...this.emptySpacesPositions,
+            [index]: this.getComponentIndex(elemIndex),
+        };
+    };
 
+    private getComponentIndex = (elemIndex: number): number => {
+        return elemIndex === -1 ? Object.values(this.componentsPositions)[0] : elemIndex;
+    };
+
+    private setGutterTemplate = () => {
+        const { gutterTemplate, gutterTemplateWithEmptySpaces } = new GridGutter(this);
+
+        this.gutterTemplate = gutterTemplate;
+        this.gutterTemplateWithEmptySpaces = gutterTemplateWithEmptySpaces;
+    };
+
+    private addGridStyles = () => {
         this.gridStyles = this.components.map((component, index) => {
             if (component === null) {
                 return null;
             }
 
-            if (!gutterTemplate[index]) {
+            if (!this.gutterTemplate[index]) {
                 return component;
             }
 
-            const { marginBefore, marginAfter, paddingBefore, paddingAfter } = gutterTemplate[index];
+            const { marginBefore, marginAfter, paddingBefore, paddingAfter } = this.gutterTemplate[index];
             const [ gutterBefore, gutterAfter ] = gutterProperties[this.direction];
 
             return {
